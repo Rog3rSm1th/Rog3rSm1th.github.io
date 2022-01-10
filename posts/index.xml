@@ -6,8 +6,231 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>en-us</language>
         <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-        <lastBuildDate>Thu, 10 Jun 2021 00:00:00 +0000</lastBuildDate>
+        <lastBuildDate>Mon, 10 Jan 2022 00:00:00 +0000</lastBuildDate>
         <atom:link href="https://Rog3rSm1th.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+        
+        <item>
+            <title>My RISC-V development environment for programming and reverse engineering purposes</title>
+            <link>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</link>
+            <pubDate>Mon, 10 Jan 2022 00:00:00 +0000</pubDate>
+            
+            <guid>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</guid>
+            <description>First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
+ The applications of this new architecture are multiple, here is a non-exhaustive list of examples :</description>
+            <content type="html"><![CDATA[<h4 id="first-what-is-risc-v"><strong>First, what is RISC-V?</strong></h4>
+<blockquote>
+<p>RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010.  and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.</p>
+</blockquote>
+<p>The applications of this new architecture are multiple, here is a non-exhaustive list of examples :</p>
+<ul>
+<li><a href="https://riscv.org/news/2019/08/how-the-european-processor-initiative-is-leveraging-risc-v-for-the-future-of-supercomputing/">The European Union has launched a supercomputer project based on the RISC-V architecture, known as the European Processor Initiative (EPI)</a></li>
+<li><a href="https://www.theregister.com/2021/06/08/iscas_2000_riscv_laptops/">The Institute of Software Chinese Academy of Sciences announced in June 2021, that it is planning to build 2,000 RV64GC-based laptops by the end of 2022</a></li>
+<li><a href="https://www.cnx-software.com/2018/02/27/greenwaves-gap8-is-a-low-power-risc-v-iot-processor-optimized-for-artificial-intelligence-applications/">A Low Power RISC-V IoT Processor Optimized for Artificial Intelligence Applications</a></li>
+<li><a href="https://pandaily.com/alibaba-announces-open-source-risc-v-based-xuantie-series-processors/">Ali-Baba annouces open-source RISC-V based processors</a></li>
+</ul>
+<p>The increasing presence of this architecture on highly critical installations led me to question the security aspect, thus my future publications on this blog will mainly focus on security in the RISC-V architecture, including RISC-V malwares analysis on linux systems.</p>
+<p>Although I will soon invest in a development board to facilitate my research, when I wanted to start tinkering with this architecture I did not have one at my disposal. So I had to set up a development environment on my non-RISC-V machine, and this is the topic of this first publication about RISC-V systems.</p>
+<p>I&rsquo;d like to show you the setup I&rsquo;ve built to ease the development of programs in assembly on a RISC-V architecture when you don&rsquo;t have a RISC-V machine at home.</p>
+<ol>
+<li><a href="#how-i-will-structure-my-setup">How I will structure my setup.</a></li>
+<li><a href="#download-a-debian-risc-v-64-bits-image">Download a Debian RISC-V 64 bits image</a></li>
+<li><a href="#using-qemu-to-emulate-a-risc-v-machine">Using QEMU to emulate a RISC-V machine</a></li>
+<li><a href="#creating-a-shared-directory-between-host-and-guest-machines">Creating a shared directory between host and guest machine</a></li>
+<li><a href="#installing-debugging-and-compilation-tools">Installing debugging and compilation tools on my host machine</a>
+<ol>
+<li><a href="#gdb">GDB</a></li>
+<li><a href="#gcc">GCC</a></li>
+<li><a href="#radare2">Radare2</a></li>
+</ol>
+</li>
+<li><a href="#demonstration">Demonstration</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+<li><a href="#to-go-further">To go further</a></li>
+</ol>
+<h2 id="how-i-will-structure-my-setup">How I will structure my setup</h2>
+<p>I started by mapping out what I was going to need:</p>
+<ul>
+<li>A Debian 64-bit RISC-V image since it is a linux distribution I know quite well. I could also have decided to work with Fedora since <a href="https://fedoraproject.org/wiki/Architectures/RISC-V">there is a RISC-V version</a> of it.</li>
+<li>A folder where I will store all my useful scripts to perform redundant actions (assembly code compilation, setup launch&hellip;)</li>
+<li>A shared folder between the host machine, and the guest machine.</li>
+<li>A folder where I store the assembly programs I write</li>
+</ul>
+<p>Here is how I built the directory tree of my project:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./RISC-V_Setup
+├── image
+│   └── Debian image
+├── scripts
+│   └── All the useful scripts <span style="color:#f92672">(</span>run.sh, compile.sh...<span style="color:#f92672">)</span>
+├── share
+│   └── Share directory between HOST <span style="color:#f92672">(</span>my computer<span style="color:#f92672">)</span> and GUEST machine <span style="color:#f92672">(</span>RISC-V emulator<span style="color:#f92672">)</span>
+├── src
+│   └── Directory where I write RISC-V assembly code
+</code></pre></div><h2 id="download-a-debian-risc-v-64-bits-image">Download a Debian RISC-V 64 bits image</h2>
+<p>I will create an <code>image</code> directory and download a pre-made RISC-V 64 Debian Image.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">mkdir image
+wget https://gitlab.com/api/v4/projects/giomasce%2Fdqib/jobs/artifacts/master/download?job=convert_riscv64-virt&#34; -O ./image/debian-rv64.zip
+</code></pre></div><p>We now only have to unzip it in the <code>./image</code> folder.</p>
+<blockquote>
+<p>The default credentials are <strong>debian:debian</strong> and <strong>root:root</strong></p>
+</blockquote>
+<h2 id="using-qemu-to-emulate-a-risc-v-machine">Using QEMU to emulate a RISC-V machine</h2>
+<blockquote>
+<p>A small point of vocabulary to avoid confusion: hereafter we will call my main machine the <strong>host</strong> machine and the RISC-V machine emulated with QEMU the <strong>guest</strong> machine.</p>
+</blockquote>
+<p>-&gt; We emulate a 64 bits version of the RISC-V processor using <a href="https://www.qemu.org/">QEMU</a>. In order to do this we will need the package <code>qemu-system-riscv64</code> which you can install with <code>sudo apt-get install qemu-system-riscv64</code></p>
+<blockquote>
+<p>For the purpose of this demonstration, we will use a 64-bit version of the RISC-V architecture, but it is however possible to emulate a 32-bit RISC-V processor with QEMU using the <code>qemu-system-riscv32</code> package</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">qemu-system-riscv64 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -machine virt <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -cpu rv64 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -m 1G <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -device virtio-net-device,netdev<span style="color:#f92672">=</span>net <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -netdev user,id<span style="color:#f92672">=</span>net,hostfwd<span style="color:#f92672">=</span>tcp::2222-:22 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -device virtio-blk-device,drive<span style="color:#f92672">=</span>hd <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -drive file<span style="color:#f92672">=</span>./Image/artifacts/overlay.qcow2,if<span style="color:#f92672">=</span>none,id<span style="color:#f92672">=</span>hd <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -bios /usr/lib/riscv64-linux-gnu/opensbi/generic/fw_jump.elf <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -kernel /usr/lib/u-boot/qemu-riscv64_smode/uboot.elf <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -append <span style="color:#e6db74">&#34;root=LABEL=rootfs console=ttyS0&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -nographic <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -fsdev local,security_model<span style="color:#f92672">=</span>passthrough,id<span style="color:#f92672">=</span>fsdev0,path<span style="color:#f92672">=</span>./share <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -device virtio-9p-pci,id<span style="color:#f92672">=</span>fs0,fsdev<span style="color:#f92672">=</span>fsdev0,mount_tag<span style="color:#f92672">=</span>hostshare
+</code></pre></div><p>I think you may need some further explanation of this script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-cpu rv64
+</code></pre></div><p>-&gt; We select a RISC-v 64 bits CPU</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-m 1G
+</code></pre></div><p>-&gt; We allocate 1GB of RAM to the guest machine.</p>
+<blockquote>
+<p>This value depends on your needs and the amount of RAM you are able to allocate to the guest machine.</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-netdev user,id<span style="color:#f92672">=</span>net,hostfwd<span style="color:#f92672">=</span>tcp::2222-:22:
+</code></pre></div><p>-&gt; This line makes port 22 accessible as localhost:2222. This lets us forward SSH connections.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-bios /usr/lib/riscv64-linux-gnu/opensbi/generic/fw_jump.elf <span style="color:#ae81ff">\
+</span></code></pre></div><p>-&gt; If needed, replace with the location of your OpenBSI. But make sure it’s the same configuration.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-append <span style="color:#e6db74">&#34;root=LABEL=rootfs console=ttyS0&#34;</span> <span style="color:#ae81ff">\
+</span></code></pre></div><p>-&gt; The append line adds extra options to the kernel command line in UNIX derivatives.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-kernel /usr/lib/u-boot/qemu-riscv64_smode/uboot.elf <span style="color:#ae81ff">\
+</span></code></pre></div><p>-&gt; the path of my U-Boot image.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-nographic
+</code></pre></div><p>-&gt; With this option, you can totally disable graphical output so that QEMU is a simple command line application.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"> -fsdev local,security_model<span style="color:#f92672">=</span>passthrough,id<span style="color:#f92672">=</span>fsdev0,path<span style="color:#f92672">=</span>./share <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span> -device virtio-9p-pci,id<span style="color:#f92672">=</span>fs0,fsdev<span style="color:#f92672">=</span>fsdev0,mount_tag<span style="color:#f92672">=</span>hostshare
+</code></pre></div><p>-&gt; These two lines allow us to create a common folder between the host machine and the guest machine.</p>
+<h2 id="creating-a-shared-directory-between-host-and-guest-machines">Creating a shared directory between Host and Guest machines</h2>
+<p>I have seen some people choosing to use <code>scp</code> to communicate between their host machine and their guest machine. I propose a different method by using a shared folder between the two machines.</p>
+<script async type="application/javascript" src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js">
+    var config = {
+      startOnLoad:true,
+      theme:'neutral',
+      align:'center'
+    };
+    mermaid.initialize(config);
+  </script>
+  
+  <div class="mermaid" align="center">
+    
+flowchart TB
+    subgraph RISC-V Setup
+    Host-Machine--> |./share| Share-directory
+    Guest-Machine--> |/mnt/share|Share-directory
+    end
+
+  </div>
+<p>-&gt; We run this script on the guest machine</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SHARED_FOLDER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/mnt/share&#34;</span>
+
+<span style="color:#75715e">#  Create shared folder</span>
+mkdir <span style="color:#e6db74">${</span>SHARED_FOLDER<span style="color:#e6db74">}</span>
+mount -t 9p -o trans<span style="color:#f92672">=</span>virtio,version<span style="color:#f92672">=</span>9p2000.L hostshare <span style="color:#e6db74">${</span>SHARED_FOLDER<span style="color:#e6db74">}</span>
+</code></pre></div><p>Now the contents of <code>./share</code> on the host machine and <code>/mnt/share</code> on the guest machine will be the same</p>
+<h2 id="installing-debugging-and-compilation-tools">Installing debugging and compilation tools</h2>
+<p>for reverse engineering purposes, I sometimes need a debugger to analyze the behavior of a binary. I am familiar with <strong>GDB</strong> and <strong>Radare2</strong>, and I will show you how to use them in this case.</p>
+<p>We will start by installing RISC-V GNU toolchain as it contains a <strong>compiler</strong> (GCC) and our favorite <strong>debugger</strong> (GDB), as well as other very useful tools, such as an <strong>assembler</strong> and a <strong>linker</strong>. Installation instructions can be found <a href="https://github.com/riscv-collab/riscv-gnu-toolchain">here</a></p>
+<h4 id="gdb">GDB</h4>
+<p>We can now debug a RISC-V binary with the command :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ riscv64-unknown-elf-gdb binary
+</code></pre></div><h4 id="gcc">GCC</h4>
+<p>If you want to compile a binary with gcc for the RISC-V architecture, here is the command to use</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ riscv64-unknown-elf-gcc -ggdb -static -o binary binary.c
+</code></pre></div><h4 id="radare2">Radare2</h4>
+<p><a href="https://github.com/radareorg/radare2">Radare2</a> is pretty cool when it comes to working with RISC-V binaries since <strong>it has built-in RISC-V support</strong>.</p>
+<p>You can analyze a binary simply by running it as usual :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ r2 ./riscv-binary
+</code></pre></div><h2 id="demonstration">Demonstration</h2>
+<p>-&gt; Here is a quick reminder of how my setup is organized. :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./RISC-V_Setup
+├── share
+│   └── Shared directory between HOST <span style="color:#f92672">(</span>my computer<span style="color:#f92672">)</span> and GUEST machine <span style="color:#f92672">(</span>RISC-V emulator<span style="color:#f92672">)</span>
+├── src
+│   └── Directory where I write RISC-V assembly code
+├── ...
+│   └── ...
+</code></pre></div><p>So we will write our assembly code in the <code>./src</code> folder, and compile it into the <code>./share</code> folder to be able to access it from the guest machine. To do this we will first open a file <code>program.s</code>  which will be a basic RISC-V assembler program that displays a &ldquo;Hello world&rdquo; message on the standard output (We must start somewhere :D ) :</p>
+<pre tabindex="0"><code class="language-risc-v" data-lang="risc-v">#
+# Risc-V Assembler program to print &quot;Hello World!&quot;
+# to stdout.
+#
+# a0-a2 - parameters to linux function services
+# a7 - linux function number
+#
+
+.global _start      # Provide program starting address to linker
+
+# Setup the parameters to print hello world
+# and then call Linux to do it.
+
+_start: addi  a0, x0, 1      # 1 = StdOut
+        la    a1, helloworld # load address of helloworld
+        addi  a2, x0, 13     # length of our string
+        addi  a7, x0, 64     # linux write system call
+        ecall                # Call linux to output the string
+
+# Setup the parameters to exit the program
+# and then call Linux to do it.
+
+        addi    a0, x0, 0   # Use 0 return code
+        addi    a7, x0, 93  # Service command code 93 terminates
+        ecall               # Call linux to terminate the program
+
+.data
+helloworld:      .ascii &quot;Hello World!\n&quot;
+</code></pre><p>Next we will have to compile this code for a 64-bit RISC-V architecture from our host machine. For this we will use several tools contained in the RISC-V GNU Compiler Toolchain.</p>
+<ul>
+<li>We use <code>riscv64-linux-gnu-as</code> to assemble the program.</li>
+<li><code>riscv64-linux-gnu-ld</code> to link the object file into an executable file.</li>
+</ul>
+<p>I wrote a bash script (stored in <code>./script</code>) to automatically do the job:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
+</span><span style="color:#75715e"></span>
+ASSEMBLY_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>dirname $0<span style="color:#66d9ef">)</span><span style="color:#e6db74">/../src&#34;</span>
+SHARE_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>dirname $0<span style="color:#66d9ef">)</span><span style="color:#e6db74">/../share&#34;</span>
+
+riscv64-linux-gnu-as -march<span style="color:#f92672">=</span>rv64imac -o <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program.o <span style="color:#e6db74">${</span>ASSEMBLY_DIR<span style="color:#e6db74">}</span>/program.s
+riscv64-linux-gnu-ld -o <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program.o
+rm <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program.o
+chmod +x <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program
+</code></pre></div><p>We launch it :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ ./scripts/compile.sh
+</code></pre></div><p>We now have an executable binary named <code>program</code> in <code>/mnt/share</code> on the guest machine.</p>
+<p>-&gt; We can test if it works :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">debian@debian:/mnt/share$ ./program
+Hello World!
+</code></pre></div><p>and it&rsquo;s working!</p>
+<p>We can now debug the binary on the host machine with <code>riscv64-unknown-elf-gdb</code> or with <code>Radare2</code>.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>So here is a setup I made to be able to work more easily under a RISC-V architecture in a linux environment. My goal was to facilitate the task of those who would like to develop in RISC-V assembler without being able to get a RISC-V machine, or to do reverse engineering. To do so, I published my complete setup with installation instructions <a href="https://github.com/Rog3rSm1th/RISC-V-Setup">here</a>.</p>
+<p>If you have any question or corrections to suggest for this article, I can be reached by mail at the following address: <a href="mailto:r0g3r5@protonmail.Com">r0g3r5@protonmail.Com</a></p>
+<p>You can also follow me on Twitter (even if I am very (very) little active) : <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
+<p>I hope I helped you, or taught you something :D</p>
+<p><img src="https://i.imgur.com/Bc59GDu.jpg#center" alt=""></p>
+<h2 id="to-go-further">To go further</h2>
+<ul>
+<li><a href="https://medium.com/swlh/risc-v-assembly-for-beginners-387c6cd02c49">A good introduction to RISC-V assembly programming from Eric Engheim</a></li>
+<li><a href="https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md">RISC-V Assembly Programmer&rsquo;s Manual</a></li>
+<li><a href="https://danielmangum.com/posts/risc-v-bytes-qemu-gdb/">Debugging a RISC-V Binary from Daniel Mangun</a></li>
+</ul>
+]]></content>
+        </item>
         
         <item>
             <title>Exploit a binary with SigReturn Oriented Programming (SROP)</title>
@@ -61,7 +284,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 <p>the case where this gadget is present in the binary is the simplest to exploit, since it will allow us to place <code>0xf</code> into the eax register in a single action, no need to chain <em>ROP gadgets</em>.</p>
 <p>➡ <strong>Exemple</strong> :</p>
 <p>We start by searching the different <em>ROP gadgets</em> present in the binary with the <a href="https://github.com/JonathanSalwan/ROPgadget">ROPgadget</a> tool</p>
-<pre><code>    $ ~ ROPgadget --binary trivial
+<pre tabindex="0"><code>    $ ~ ROPgadget --binary trivial
     Gadgets information
     ============================================================
     [...]
@@ -95,7 +318,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 <h3 id="using-thepop-eax-ret-gadget">Using the<code>pop eax; ret</code> gadget</h3>
 <p>This case is a &ldquo;variant&rdquo; of the previous one where it is still rather simple to put the value <code>0xf</code> in the <code>eax</code> register</p>
 <p>➡ <strong>Exemple</strong> :</p>
-<pre><code>    $ ~ ROPgadget --binary pop_eax
+<pre tabindex="0"><code>    $ ~ ROPgadget --binary pop_eax
     Gadgets information
     ============================================================
     [...]
@@ -129,7 +352,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 </tbody>
 </table>
 <p>example of a python exploit by <a href="https://github.com/mishrasunny174">mishrasunny174</a></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
 <span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 context<span style="color:#f92672">.</span>arch <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;amd64&#39;</span>
 offset <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x48</span>
