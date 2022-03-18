@@ -2,22 +2,37 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</loc>
-    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
+    <loc>https://Rog3rSm1th.github.io/tags/0day/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/tags/frelatage/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/tags/fuzzing/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://Rog3rSm1th.github.io/posts/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/tags/python/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/tags/</loc>
+    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</loc>
     <lastmod>2022-01-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://Rog3rSm1th.github.io/tags/programming/</loc>
     <lastmod>2022-01-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://Rog3rSm1th.github.io/tags/risc-v/</loc>
-    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/</loc>
-    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/tags/</loc>
     <lastmod>2022-01-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://Rog3rSm1th.github.io/about/</loc>

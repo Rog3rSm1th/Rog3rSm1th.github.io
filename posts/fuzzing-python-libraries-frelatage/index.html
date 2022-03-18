@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author" content="Rog3rSm1th">
+<meta name="description" content="How I used Frelatage to fuzz one of the most used python library and found bugs." />
+<meta name="keywords" content=", python, fuzzing, frelatage, 0day" />
+<meta name="robots" content="noodp" />
+<meta name="theme-color" content="" />
+<link rel="canonical" href="https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/" />
+
+
+    <title>
+        
+            Fuzzing Pillow with Frelatage to find bugs and vulnerabilities :: Rog3rSm1th  — blog
+        
+    </title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.0fae95e8636ac05c5c5dd0fb61693954217f3f35992751e1626888c6ea2163ad.css">
+
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <meta name="msapplication-TileColor" content="">
+
+
+<meta itemprop="name" content="Fuzzing Pillow with Frelatage to find bugs and vulnerabilities">
+<meta itemprop="description" content="How I used Frelatage to fuzz one of the most used python library and found bugs."><meta itemprop="datePublished" content="2022-03-18T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-03-18T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1620"><meta itemprop="image" content="https://Rog3rSm1th.github.io/"/>
+<meta itemprop="keywords" content="python,fuzzing,frelatage,0day," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://Rog3rSm1th.github.io/"/>
+
+<meta name="twitter:title" content="Fuzzing Pillow with Frelatage to find bugs and vulnerabilities"/>
+<meta name="twitter:description" content="How I used Frelatage to fuzz one of the most used python library and found bugs."/>
+
+
+
+
+    <meta property="og:title" content="Fuzzing Pillow with Frelatage to find bugs and vulnerabilities" />
+<meta property="og:description" content="How I used Frelatage to fuzz one of the most used python library and found bugs." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/" /><meta property="og:image" content="https://Rog3rSm1th.github.io/"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-03-18T00:00:00+00:00" />
+<meta property="article:modified_time" content="2022-03-18T00:00:00+00:00" /><meta property="og:site_name" content="Rog3rSm1th" />
+
+
+
+
+
+    <meta property="article:section" content="fuzzing" />
+
+
+
+    <meta property="article:published_time" content="2022-03-18 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+
+
+
+    </head>
+
+    
+        <body>
+    
+    
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">Rog3rSm1th @ blog</span>
+            <span class="logo__cursor" style=
+                  "
+                   
+                   ">
+            </span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="/about">About</a></li><li><a href="/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+  <main class="post">
+
+    <div class="post-info">
+      <p>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        8 minutes
+
+        
+      </p>
+    </div>
+
+    <article>
+      <h1 class="post-title">
+        <a href="https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/">Fuzzing Pillow with Frelatage to find bugs and vulnerabilities</a>
+      </h1>
+
+      
+        <div class="post-excerpt">How I used Frelatage to fuzz one of the most used python library and found bugs.</div>
+      
+
+      
+
+      
+
+      <div class="post-content">
+        <h2 id="what-is-fuzzing">What is fuzzing?</h2>
+<blockquote>
+<p><em>Fuzzing</em> or <em>fuzz testing</em> is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: <a href="https://github.com/google/AFL">AFL</a>, <a href="https://github.com/google/honggfuzz">HongFuzz</a> or <a href="https://github.com/xmendez/wfuzz">wfuzz</a>) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</p>
+</blockquote>
+<p>This method has proven its value many times in vulnerabilities and bugs research, as shown in these different articles and videos:</p>
+<ul>
+<li><a href="https://blog.cloudflare.com/a-gentle-introduction-to-linux-kernel-fuzzing/">Fuzzing the linux kernel with AFL++</a></li>
+<li><a href="https://lcamtuf.blogspot.com/2014/11/pulling-jpegs-out-of-thin-air.html">Pulling JPEGs out of thin air</a> (THE article that made me interested in fuzzing)</li>
+<li><a href="https://www.youtube.com/watch?v=IOTTqRT8tf0">Fuzzing Google V8 JavaScript Engine with Dharma </a></li>
+<li><a href="https://bananamafia.dev/post/gb-fuzz/">Fuzzing A GameBoy Emulator With AFL++</a></li>
+</ul>
+<p>So a few weeks ago, I immersed myself  into this new world, and after spending a lot of time playing with AFL++, HongFuzz and Atheris on a lot of programs, I felt like writing my own fuzzer, first for learning purposes, then for finding vulnerabilities. A few nights of code later, Frelatage was born.</p>
+<h2 id="frelatage">Frelatage</h2>
+<p>Frelatage is a coverage-based Python fuzzing library which can be used to fuzz python code.</p>
+<p>-&gt; It is a <strong>mutation-based</strong> fuzzer. Meaning, Frelatage generates new inputs by slightly modifying a seed input, using different method such as duplicating a part of the input, or modifying a segment of it.</p>
+<p>-&gt; Frelatage is also a <strong>greybox fuzzer</strong> (not blackbox nor whitebox). Meaning, Frelatage leverages coverage-feedback to learn how to reach deeper into the program. It is not entirely blackbox because Frelatage leverages at least some program analysis. It is not entirely whitebox either because Frelatage does not build on heavyweight program analysis or constraint solving. Instead, Frelatage uses lightweight program instrumentation to glean some information about the <strong>coverage</strong> of a generated input. If a generated input increases coverage, it is used afterwards  for further fuzzing.</p>
+<h4 id="influences">Influences</h4>
+<p>The development of Frelatage was inspired by various other fuzzers, including <em>AFL/AFL++</em>, <em>Atheris</em> and <em>PythonFuzz</em>.The main purpose of the project is to take advantage of the best features of these fuzzers and gather them together into a new tool in order to efficiently fuzz python applications and libraries.</p>
+<ol>
+<li><a href="#how-it-works">How it works</a></li>
+<li><a href="#setting-up-our-fuzzing-environment">Setting up our fuzzing environment</a>
+<ol>
+<li><a href="#installing-frelatage">Installing Frelatage</a></li>
+<li><a href="#creation-of-a-corpus">Creation of a corpus</a></li>
+<li><a href="#dictionary-based-optimization">Dictionary-based optimization</a></li>
+</ol>
+</li>
+<li><a href="#writing-the-fuzzing-harness">Writing the fuzzing harness</a></li>
+<li><a href="#running-the-fuzzer">Running the fuzzer</a></li>
+<li><a href="#triaging-the-crashes-reports">Triaging the crashes reports</a></li>
+<li><a href="#upcoming-features">Upcoming features</a></li>
+</ol>
+<h2 id="how-it-works">How it works</h2>
+<p>The idea behind the design of Frelatage is the usage of a <em>genetic algorithm</em> to generate mutations that will cover as much code as possible (frelatage is a <strong>coverage-based fuzzer</strong>). The process of a fuzzing cycle can be roughly summarized with this diagram:</p>
+<script async type="application/javascript" src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js">
+    var config = {
+      startOnLoad:true,
+      theme:'neutral',
+      align:'center'
+    };
+    mermaid.initialize(config);
+  </script>
+  
+  <div class="mermaid">
+    
+graph TB
+
+    m1(Mutation 1) --> |input| function(Fuzzed function)
+    m2(Mutation 2) --> |input| function(Fuzzed function)
+    mplus(Mutation ...) --> |input| function(Fuzzed function)
+    mn(Mutation n) --> |input| function(Fuzzed function)
+    
+    function --> generate_reports(Generate reports)
+    generate_reports --> rank_reports(Rank reports)  
+    rank_reports --> select(Select n best reports)
+    
+    select --> |mutate| nm1(Mutation 1) & nm2(Mutation 2) & nmplus(Mutation ...) & nmn(Mutation n)
+    
+    subgraph Cycle mutations
+    direction LR
+    m1
+    m2
+    mplus
+    mn
+    end
+    
+    subgraph Next cycle mutations
+    direction LR
+    nm1
+    nm2
+    nmplus
+    nmn
+    end
+     
+    style function fill:#5388e8,stroke:white,stroke-width:4px
+
+  </div>
+<h2 id="setting-up-our-fuzzing-environment">Setting up our fuzzing environment</h2>
+<h4 id="installing-frelatage">Installing Frelatage</h4>
+<p>The package is available on <a href="https://pypi.org/project/frelatage/">PyPi</a> and can be installed simply with pip:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">pip3 install frelatage
+</code></pre></div><h4 id="the-project-structure">The project structure</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Create the main folder</span>
+mkdir pillow_fuzz
+cd pillow_fuzz
+
+<span style="color:#75715e"># Create the input file folder</span>
+mkdir in
+<span style="color:#75715e"># Create the dictionary folder</span>
+mkdir dict
+<span style="color:#75715e"># Create the fuzzing harness file</span>
+touch pillow_fuzzer.py
+</code></pre></div><p>Once these operations are done, we have a tree structure of this form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">  ├── pillow_fuzzer.py
+  │   ├── dict
+  │   ├── in
+</code></pre></div><h2 id="creation-of-a-corpus">Creation of a corpus</h2>
+<blockquote>
+<p>A corpus is a set of inputs for a fuzz target. In most contexts, it refers to a set of minimal test inputs that generate maximal code coverage.</p>
+</blockquote>
+<p>Pillow being an image processing library, we will need a corpus of images to reach a satisfactory code coverage and help the fuzzer to find interesting paths. The <a href="https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html">official documentation</a> of the library informs us that the following formats are fully supported:</p>
+<ul>
+<li>BMP</li>
+<li>DDS</li>
+<li>DIB</li>
+<li>EPS</li>
+<li>GIF</li>
+<li>ICNS</li>
+<li>ICO</li>
+<li>IM</li>
+<li>JPEG</li>
+<li>JPEG 2000</li>
+<li>MSP</li>
+<li>PCX</li>
+<li>PNG</li>
+<li>Saving</li>
+<li>PPM</li>
+<li>SGI</li>
+<li>SPIDER</li>
+<li>TGA</li>
+<li>TIFF</li>
+<li>WebP</li>
+<li>XBM</li>
+</ul>
+<p>In order to optimize the efficiency of the fuzzer, it may be relevant to write a different fuzzing harness for each supported format. This includes the creation of a dictionary specific to each format, as well as a dedicated corpus for each fuzzing harness.</p>
+<blockquote>
+<p>What we call a <strong>fuzzing harness</strong> is a test case or a particular test target.</p>
+</blockquote>
+<p>For this article, we will focus on the <strong>JPEG</strong> format, on the one hand because it is one of the most widespread formats, and on the other hand because it is the format for which it is the easiest to find a corpus (with PNG and GIF).</p>
+<p>There are already pre-made corpus freely available, for the needs of our work we will use this <a href="https://github.com/strongcourage/fuzzing-corpus/tree/master/jpg">one</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Download the corpus</span>
+svn export https://github.com/strongcourage/fuzzing-corpus/trunk/jpg
+
+<span style="color:#75715e"># Merge all subfolders into the ./in folder</span>
+cp jpg/*/* ./in
+rm -rf jpg
+</code></pre></div><h2 id="dictionary-based-optimization">Dictionary-based optimization</h2>
+<p>A JPEG image consists of a sequence of segments, each beginning with a marker, each of which begins with a 0xFF byte, followed by a byte indicating what kind of marker it is.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="https://d33wubrfki0l68.cloudfront.net/bdc1363abbd5744200ec5283d4154e55143df86c/8c624/images/decoding_jpeg/jpegrgb_dissected.png" alt="space-1.jpg"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">representation of a JPEG file</td>
+</tr>
+</tbody>
+</table>
+<p>We will use <a href="https://github.com/Rog3rSm1th/Frelatage/blob/main/dictionaries/jpeg.dict">this dictionary</a> that was written for AFL by Michal Zalewski.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">#
+# AFL dictionary for JPEG images
+# ------------------------------
+#
+# Created by Michal Zalewski
+#
+
+header_jfif=&#34;JFIF\x00&#34;
+header_jfxx=&#34;JFXX\x00&#34;
+
+section_ffc0=&#34;\xff\xc0&#34;
+section_ffc2=&#34;\xff\xc2&#34;
+section_ffc4=&#34;\xff\xc4&#34;
+section_ffd0=&#34;\xff\xd0&#34;
+section_ffd8=&#34;\xff\xd8&#34;
+section_ffd9=&#34;\xff\xd9&#34;
+section_ffda=&#34;\xff\xda&#34;
+section_ffdb=&#34;\xff\xdb&#34;
+section_ffdd=&#34;\xff\xdd&#34;
+section_ffe0=&#34;\xff\xe0&#34;
+section_ffe1=&#34;\xff\xe1&#34;
+section_fffe=&#34;\xff\xfe&#34;
+</code></pre></div><p>it will be saved in the <code>./dict</code> folder (default folder for dictionaries)</p>
+<h2 id="writing-the-fuzzing-harness">Writing the fuzzing harness</h2>
+<p>Our fuzzing harness will be in <code>pillow_fuzzer.py</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> frelatage
+<span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> Image
+<span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> ImageFile
+
+<span style="color:#75715e"># Allow PIL to load truncated images</span>
+ImageFile<span style="color:#f92672">.</span>LOAD_TRUNCATED_IMAGES <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+
+<span style="color:#75715e"># The function we want to fuzz</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">jpeg_fuzz_pillow</span>(image):
+    <span style="color:#75715e"># We fuzz the &#34;open&#34; method</span>
+    Image<span style="color:#f92672">.</span>open(image)
+    <span style="color:#66d9ef">return</span>
+
+<span style="color:#75715e"># Load the corpus</span>
+jpeg_corpus <span style="color:#f92672">=</span> frelatage<span style="color:#f92672">.</span>load_corpus(directory<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./&#34;</span>)
+<span style="color:#75715e"># Initialize the fuzzer</span>
+f <span style="color:#f92672">=</span> frelatage<span style="color:#f92672">.</span>Fuzzer(jpeg_fuzz_pillow, [jpeg_corpus])
+<span style="color:#75715e"># Launch the fuzzing process</span>
+f<span style="color:#f92672">.</span>fuzz()
+</code></pre></div><h2 id="running-the-fuzzer">Running the fuzzer</h2>
+<p>I have developed frelatage to be highly configurable, so it is possible to change several constants through environment variables:</p>
+<table>
+<thead>
+<tr>
+<th>ENV Variable</th>
+<th>Description</th>
+<th>Possible Values</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FRELATAGE_DICTIONARY_ENABLE</strong></td>
+<td>Enable the use of mutations based on dictionary elements</td>
+<td><code>1</code> to enable, <code>0</code> otherwise</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_TIMEOUT_DELAY</strong></td>
+<td>Delay in seconds after which a function will return a TimeoutError</td>
+<td><code>1</code> - <code>20</code></td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_INPUT_FILE_TMP_DIR</strong></td>
+<td>Temporary folder where input files are stored</td>
+<td>absolute path to a folder, e.g. <code>/tmp/custom_dir</code></td>
+<td><code>/tmp/frelatage</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_INPUT_MAX_LEN</strong></td>
+<td>Maximum size of an input variable in bytes</td>
+<td><code>4</code> - <code>1000000</code></td>
+<td><code>4094</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_MAX_THREADS</strong></td>
+<td>Maximum number of simultaneous threads</td>
+<td><code>8</code> - <code>50</code></td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_MAX_CYCLES_WITHOUT_NEW_PATHS</strong></td>
+<td>Number of cycles without new paths found after which we go to the next stage</td>
+<td><code>10</code> - <code>50000</code></td>
+<td><code>5000</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_INPUT_DIR</strong></td>
+<td>Directory containing the initial input files. It needs to be a relative path (to the path of the fuzzing file)</td>
+<td>relative path to a folder, e.g. <code>./in</code></td>
+<td><code>./in</code></td>
+</tr>
+<tr>
+<td><strong>FRELATAGE_DICTIONARY_DIR</strong></td>
+<td>Default directory for dictionaries. It needs to be a relative path (to the path of the fuzzing file)</td>
+<td>relative path to a folder, e.g. <code>./dict</code></td>
+<td><code>./dict</code></td>
+</tr>
+</tbody>
+</table>
+<p>So we start by configuring our fuzzer:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export FRELATAGE_DICTIONARY_ENABLE<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_TIMEOUT_DELAY<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_INPUT_FILE_TMP_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/tmp/frelatage&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_INPUT_MAX_LEN<span style="color:#f92672">=</span><span style="color:#ae81ff">4096</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_MAX_THREADS<span style="color:#f92672">=</span><span style="color:#ae81ff">8</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_MAX_CYCLES_WITHOUT_NEW_PATHS<span style="color:#f92672">=</span><span style="color:#ae81ff">5000</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_INPUT_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./in&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
+export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./dict&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
+</code></pre></div><p>Then we launch it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python3 pillow_fuzzer.py
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="https://i.imgur.com/iCB6kNB.gif#center" alt=""></th>
+</tr>
+</thead>
+</table>
+<p>The fuzzing process can take from a few hours to several days, depending on the new paths found by fuzzing during the process.</p>
+<h2 id="triaging-the-crashes-reports">Triaging the crashes reports</h2>
+<p>now enters the less pleasant part, namely triaging the crashes.</p>
+<blockquote>
+<p><strong>Crash triage</strong> involves examining each crash discovered by Frelatage to determine whether the crash might be worth investigating further (for security researchers, this typically means determining whether the crash is likely due to a vulnerability) and, if so, what the root cause of the crash is. Reviewing each crash in detail can be very time consuming, especially if the fuzzer has identified dozens or hundreds of crashes. This will probably be the case if you leave Frelatage running for several hours/days.</p>
+</blockquote>
+<p>Each crash is saved in the output folder (<code>./out</code> by default), in a folder named : <code>id:&lt;crash ID&gt;,err:&lt;error type&gt;,err_file:&lt;error file&gt;,err_pos:&lt;err_pos&gt;</code> Which you can read as follows:</p>
+<ul>
+<li><em><strong>id</strong></em>: The crash number, <em>e.g. 000001</em></li>
+<li><em><strong>err</strong></em>: The type of error triggered, <em>e.g. OSError, AttributeError</em></li>
+<li><em><strong>err_file</strong></em>: File in which an error has occurred, <em>e.g: image</em></li>
+<li><em><strong>err_pos</strong></em>: Line where an error occurred, <em>e.g. 34</em></li>
+</ul>
+<p>-&gt; The report directory is in the following form and contains files passed as argument:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    ├── out
+    │   ├── id:&lt;crash ID&gt;,err:&lt;error type&gt;,err_file:&lt;error file&gt;,err_pos:&lt;err_pos&gt;
+    │       ├── input
+    │       ├── 0
+    │            ├── &lt;inputfile1&gt;
+    │       ├── ...
+    │   ├── ...
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="https://i.imgur.com/UynLsqM.png#center" alt=""></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Examples of reports generated by Frelatage</td>
+</tr>
+</tbody>
+</table>
+<h4 id="read-a-report">Read a report</h4>
+<p>Inputs passed to a function are serialized using the pickle module before being saved in the <code>&lt;report_folder&gt;/input</code> file. It is therefore necessary to deserialize it to be able to read the contents of the file. This action can be performed with <a href="https://github.com/Rog3rSm1th/Frelatage/blob/main/scripts/read_report.py">this script</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./read_report.py input
+
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#39;input&#39;</span>: <span style="color:#f92672">[{</span><span style="color:#e6db74">&#39;value&#39;</span>: <span style="color:#e6db74">&#39;/tmp/frelatage/0/0/0e8ef3773a13824c42f021c1af856c351effa6a2-2&#39;</span>, <span style="color:#e6db74">&#39;file&#39;</span>: True<span style="color:#f92672">}]}</span>
+</code></pre></div><h2 id="upcoming-features">Upcoming features</h2>
+<p>Frelatage is still in active development, so what has been written above may (will?) change, as I plan to work on new features to make my fuzzer even more effective.</p>
+<p>Here are the features I plan to implement in the next few weeks:</p>
+<ul>
+<li>Possibility to use different dictionaries for each input</li>
+<li>Implementation of a crash triage system</li>
+<li>A more colorful interface (who wants to work with dull tools?)</li>
+</ul>
+<p>To keep up to date with the changes made to Frelatage, the very best way is to look at the <a href="https://github.com/Rog3rSm1th/Frelatage">Github repo</a></p>
+<h3 id="thanks-for-reading">Thanks for reading!</h3>
+<p>for more informations or suggestions, you can contact me at: <a href="mailto:r0g3r5@protonmail.com">r0g3r5@protonmail.com</a>, or on twitter at <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
+
+      </div>
+    </article>
+
+    <hr />
+
+    <div class="post-info">
+      
+    <p>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg>
+
+        <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/python/">python</a></span>
+        <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/fuzzing/">fuzzing</a></span>
+        <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/frelatage/">frelatage</a></span>
+        <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/0day/">0day</a></span>
+        
+    </p>
+
+      
+    <p>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-folder meta-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+
+        <span class="tag"><a href="https://Rog3rSm1th.github.io/categories/fuzzing/">fuzzing</a></span>
+        
+    </p>
+
+
+      <p>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        1620 Words
+      </p>
+
+      <p>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        
+          2022-03-18 01:00
+        
+
+         
+          
+        
+      </p>
+    </div>
+      <hr />
+      <div class="sharing-buttons">
+        
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_blank" rel="noopener" aria-label="" title="Share on facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?url=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_blank" rel="noopener" aria-label="" title="Share on twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--small">
+      <div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://www.tumblr.com/widgets/share/tool?posttype=link&amp;title=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities&amp;caption=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities&amp;canonicalUrl=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_blank" rel="noopener" aria-label="" title="Share on tumblr">
+  <div class="resp-sharing-button resp-sharing-button--tumblr resp-sharing-button--small">
+    <div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.563 24c-5.093 0-7.031-3.756-7.031-6.411V9.747H5.116V6.648c3.63-1.313 4.512-4.596 4.71-6.469C9.84.051 9.941 0 9.999 0h3.517v6.114h4.801v3.633h-4.82v7.47c.016 1.001.375 2.371 2.207 2.371h.09c.631-.02 1.486-.205 1.936-.419l1.156 3.425c-.436.636-2.4 1.374-4.156 1.404h-.178l.011.002z"/></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="mailto:?subject=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities&amp;body=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_self" rel="noopener" aria-label="" title="Share via email">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://pinterest.com/pin/create/button/?url=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f&amp;media=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f;description=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities" target="_blank" rel="noopener" aria-label="" title="Share on pinterest">
+  <div class="resp-sharing-button resp-sharing-button--pinterest resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f&amp;title=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities&amp;summary=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities&amp;source=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_blank" rel="noopener" aria-label="" title="Share on linkedin">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f&amp;resubmit=true&amp;title=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities" target="_blank" rel="noopener" aria-label="" title="Share on reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://www.xing.com/app/user?op=share;url=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f;title=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities" target="_blank" rel="noopener" aria-label="" title="Share on xing">
+  <div class="resp-sharing-button resp-sharing-button--xing resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M18.188 0c-.517 0-.741.325-.927.66 0 0-7.455 13.224-7.702 13.657.015.024 4.919 9.023 4.919 9.023.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916c-.004-.006-.004-.016 0-.022L22.139.756c.095-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74c-.211 0-.385.074-.473.216-.09.149-.078.339.02.531l2.34 4.05c.004.01.004.016 0 .021L1.86 16.051c-.099.188-.093.381 0 .529.085.142.239.234.45.234h3.461c.518 0 .766-.348.945-.667l3.734-6.609-2.378-4.155c-.172-.315-.434-.659-.962-.659H3.648v.016z"/></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="whatsapp://send?text=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities%20https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_blank" rel="noopener" aria-label="" title="Share on whatsapp">
+  <div class="resp-sharing-button resp-sharing-button--whatsapp resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f&amp;t=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities" target="_blank" rel="noopener" aria-label="" title="Share on hacker news">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M0 24V0h24v24H0zM6.951 5.896l4.112 7.708v5.064h1.583v-4.972l4.148-7.799h-1.749l-2.457 4.875c-.372.745-.688 1.434-.688 1.434s-.297-.708-.651-1.434L8.831 5.896h-1.88z"/></svg>
+    </div>
+  </div>
+</a>
+
+
+<a class="resp-sharing-button__link" href="https://telegram.me/share/url?text=Fuzzing%20Pillow%20with%20Frelatage%20to%20find%20bugs%20and%20vulnerabilities&amp;url=https%3a%2f%2fRog3rSm1th.github.io%2fposts%2ffuzzing-python-libraries-frelatage%2f" target="_blank" rel="noopener" aria-label="" title="Share on telegram">
+  <div class="resp-sharing-button resp-sharing-button--telegram resp-sharing-button--small"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    </div>
+  </div>
+</a>
+
+      </div>
+
+    
+    <div class="pagination">
+        
+        <div class="pagination__title">
+            <span class="pagination__title-h">Read other posts</span>
+            <hr />
+        </div>
+        
+
+        <div class="pagination__buttons">
+            
+
+            
+            <span class="button next">
+                <a href="https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/">
+                    <span class="button__text">My RISC-V development environment for programming and reverse engineering purposes</span>
+                    <span class="button__icon">→</span>
+                </a>
+            </span>
+            
+        </div>
+    </div>
+
+
+    
+
+    
+
+  </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    
+    
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+<script type="text/javascript" src="/bundle.min.599099f1f14b78b657d524b28e10e0c5098e7cd46e9c7aed73d577068a276c3ff1bb234cbf29cb313333e83cf411727b43157c91ce5b809e2ffc81664614608e.js" integrity="sha512-WZCZ8fFLeLZX1SSyjhDgxQmOfNRunHrtc9V3BoonbD/xuyNMvynLMTMz6Dz0EXJ7QxV8kc5bgJ4v/IFmRhRgjg=="></script>
+
+
+
+    </body>
+</html>

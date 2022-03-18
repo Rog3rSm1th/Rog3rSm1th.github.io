@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>fuzzing on Rog3rSm1th</title>
+    <link>https://Rog3rSm1th.github.io/tags/fuzzing/</link>
+    <description>Recent content in fuzzing on Rog3rSm1th</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
+    <lastBuildDate>Fri, 18 Mar 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://Rog3rSm1th.github.io/tags/fuzzing/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Fuzzing Pillow with Frelatage to find bugs and vulnerabilities</title>
+      <link>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</link>
+      <pubDate>Fri, 18 Mar 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</guid>
+      <description>What is fuzzing?  Fuzzing or fuzz testing is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
+    </item>
+    
+  </channel>
+</rss>
