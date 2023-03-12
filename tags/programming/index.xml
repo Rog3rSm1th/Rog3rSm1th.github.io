@@ -1,21 +1,41 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Programming on Rog3rSm1th</title>
+    <title>programming on Rog3rSm1th</title>
     <link>https://Rog3rSm1th.github.io/tags/programming/</link>
-    <description>Recent content in Programming on Rog3rSm1th</description>
+    <description>Recent content in programming on Rog3rSm1th</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-    <lastBuildDate>Mon, 10 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://Rog3rSm1th.github.io/tags/programming/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 15 Jan 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://Rog3rSm1th.github.io/tags/programming/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Some experiments with Cairo 1.0</title>
+      <link>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</link>
+      <pubDate>Sun, 15 Jan 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</guid>
+      <description>Starkware has recently released the 1.0 version of its Cairo language, a programming language designed for writing provable programs using zero-knowledge proofs. The new version introduces a new syntax inspired by Rust, as well as a host of new features that make it easier than ever to write secure and efficient code.
+ ✨ My attempt at Cairo 1.0 I was eager to give Cairo 1.0 a try. To test out the language, I decided to write a few mathematical functions that would showcase its capabilities (GCD, pow, binomial coefficient, factorial).</description>
+    </item>
+    
     <item>
       <title>My RISC-V development environment for programming and reverse engineering purposes</title>
       <link>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</link>
       <pubDate>Mon, 10 Jan 2022 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</guid>
-      <description>First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
- The applications of this new architecture are multiple, here is a non-exhaustive list of examples :</description>
+      <description>🧐 First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
+ The applications of this new architecture are multiple, here is a non-exhaustive list of examples:</description>
+    </item>
+    
+    <item>
+      <title>Solving Advent of code, but with a different programming language for each day !</title>
+      <link>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</guid>
+      <description>Advent of Code is an annual programming challenge that occurs every December, where participants attempt to solve a set of daily puzzles that range in difficulty from easy to hard. I decided to challenge myself by attempting to solve each day&amp;rsquo;s puzzle from the 2015 edition using a different programming language.
+ 🤔 Why ? The goal of this project was to broaden my horizons and explore the various programming paradigms that exist, ranging from functional programming to imperative programming, and from object-oriented programming to declarative programming.</description>
     </item>
     
   </channel>

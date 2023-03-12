@@ -6,9 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="author" content="Rog3rSm1th">
 <meta name="description" content="How I used Frelatage to fuzz one of the most used python library and found bugs." />
-<meta name="keywords" content=", python, fuzzing, frelatage, 0day" />
+<meta name="keywords" content=", python, fuzzing, frelatage" />
 <meta name="robots" content="noodp" />
 <meta name="theme-color" content="" />
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+
 <link rel="canonical" href="https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/" />
 
 
@@ -20,12 +27,12 @@
 
 
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" rel="stylesheet"
-    type="text/css">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" integrity="sha512-Cv93isQdFwaKBV+Z4X8kaVBYWHST58Xb/jVOcV9aRsGSArZsgAnFIhMpDoMDcFNoUtday1hdjn0nGp3+KZyyFw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 
 
-<link rel="stylesheet" href="/main.0fae95e8636ac05c5c5dd0fb61693954217f3f35992751e1626888c6ea2163ad.css">
+<link rel="stylesheet" href="/main.9a489d9dd56af0a4e1445a31db016289012e1d822abbfc4ffb6f279f501713a9.css" integrity="sha256-mkidndVq8KThRFox2wFiiQEuHYIqu/xP&#43;28nn1AXE6k=">
 
 
 
@@ -39,10 +46,16 @@
 
 
 <meta itemprop="name" content="Fuzzing Pillow with Frelatage to find bugs and vulnerabilities">
-<meta itemprop="description" content="How I used Frelatage to fuzz one of the most used python library and found bugs."><meta itemprop="datePublished" content="2022-03-18T00:00:00+00:00" />
+<meta itemprop="description" content="How I used Frelatage to fuzz one of the most used python library and found bugs.">
+<meta itemprop="datePublished" content="2022-03-18T00:00:00+00:00" />
 <meta itemprop="dateModified" content="2022-03-18T00:00:00+00:00" />
-<meta itemprop="wordCount" content="1620"><meta itemprop="image" content="https://Rog3rSm1th.github.io/"/>
-<meta itemprop="keywords" content="python,fuzzing,frelatage,0day," />
+<meta itemprop="wordCount" content="1650">
+<meta itemprop="image" content="https://Rog3rSm1th.github.io/"/>
+
+
+
+<meta itemprop="keywords" content="python,fuzzing,frelatage," />
+
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:image" content="https://Rog3rSm1th.github.io/"/>
 
@@ -51,14 +64,13 @@
 
 
 
-
     <meta property="og:title" content="Fuzzing Pillow with Frelatage to find bugs and vulnerabilities" />
 <meta property="og:description" content="How I used Frelatage to fuzz one of the most used python library and found bugs." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/" /><meta property="og:image" content="https://Rog3rSm1th.github.io/"/><meta property="article:section" content="posts" />
+<meta property="og:url" content="https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/" />
+<meta property="og:image" content="https://Rog3rSm1th.github.io/"/>
 <meta property="article:published_time" content="2022-03-18T00:00:00+00:00" />
 <meta property="article:modified_time" content="2022-03-18T00:00:00+00:00" /><meta property="og:site_name" content="Rog3rSm1th" />
-
 
 
 
@@ -68,6 +80,8 @@
 
 
     <meta property="article:published_time" content="2022-03-18 00:00:00 &#43;0000 UTC" />
+
+
 
 
 
@@ -91,7 +105,8 @@
     <div class="logo">
         
             <span class="logo__mark">></span>
-            <span class="logo__text">Rog3rSm1th @ blog</span>
+            <span class="logo__text ">
+                rog3rsm1th</span>
             <span class="logo__cursor" style=
                   "
                    
@@ -105,7 +120,7 @@
         <span class="header__right">
             
                 <nav class="menu">
-    <ul class="menu__inner"><li><a href="/about">About</a></li><li><a href="/posts">Blog</a></li>
+    <ul class="menu__inner"><li><a href="/about">about</a></li><li><a href="/posts">blog</a></li><li><a href="/contact">contact</a></li>
     </ul>
 </nav>
 
@@ -151,9 +166,9 @@
       
 
       <div class="post-content">
-        <h2 id="what-is-fuzzing">What is fuzzing?</h2>
+        <h4 id="-what-is-fuzzing">🧐 What is fuzzing?</h4>
 <blockquote>
-<p><em>Fuzzing</em> or <em>fuzz testing</em> is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: <a href="https://github.com/google/AFL">AFL</a>, <a href="https://github.com/google/honggfuzz">HongFuzz</a> or <a href="https://github.com/xmendez/wfuzz">wfuzz</a>) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</p>
+<p><em>Fuzzing</em> or <em>fuzz testing</em> is an effective way to find bigs or vulnerabilities in a software or a library. The program which is used to fuzz is called the <em>fuzzer</em> (for example: <a href="https://github.com/google/AFL">AFL</a>, <a href="https://github.com/google/honggfuzz">HongFuzz</a> or <a href="https://github.com/xmendez/wfuzz">wfuzz</a>) and the program being fuzzed is our <em>target</em>. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a <em>crash</em>.</p>
 </blockquote>
 <p>This method has proven its value many times in vulnerabilities and bugs research, as shown in these different articles and videos:</p>
 <ul>
@@ -163,39 +178,42 @@
 <li><a href="https://bananamafia.dev/post/gb-fuzz/">Fuzzing A GameBoy Emulator With AFL++</a></li>
 </ul>
 <p>So a few weeks ago, I immersed myself  into this new world, and after spending a lot of time playing with AFL++, HongFuzz and Atheris on a lot of programs, I felt like writing my own fuzzer, first for learning purposes, then for finding vulnerabilities. A few nights of code later, Frelatage was born.</p>
-<h2 id="frelatage">Frelatage</h2>
+<h4 id="-frelatage">🏭 Frelatage</h4>
 <p>Frelatage is a coverage-based Python fuzzing library which can be used to fuzz python code.</p>
 <p>-&gt; It is a <strong>mutation-based</strong> fuzzer. Meaning, Frelatage generates new inputs by slightly modifying a seed input, using different method such as duplicating a part of the input, or modifying a segment of it.</p>
-<p>-&gt; Frelatage is also a <strong>greybox fuzzer</strong> (not blackbox nor whitebox). Meaning, Frelatage leverages coverage-feedback to learn how to reach deeper into the program. It is not entirely blackbox because Frelatage leverages at least some program analysis. It is not entirely whitebox either because Frelatage does not build on heavyweight program analysis or constraint solving. Instead, Frelatage uses lightweight program instrumentation to glean some information about the <strong>coverage</strong> of a generated input. If a generated input increases coverage, it is used afterwards  for further fuzzing.</p>
-<h4 id="influences">Influences</h4>
+<p>-&gt; Frelatage is also a <strong>greybox fuzzer</strong> (not blackbox nor whitebox). Meaning, Frelatage leverages coverage-feedback to learn how to reach deeper into the program. It is not entirely blackbox because Frelatage leverages at least some program analysis. It is not entirely whitebox either because Frelatage does not build on heavyweight program analysis or constraint solving. Instead, Frelatage uses lightweight program instrumentation to glean some information about the <strong>coverage</strong> of a generated input. If a generated input increases coverage, it is used afterwards for further fuzzing.</p>
+<h4 id="-influences">📕 Influences</h4>
 <p>The development of Frelatage was inspired by various other fuzzers, including <em>AFL/AFL++</em>, <em>Atheris</em> and <em>PythonFuzz</em>.The main purpose of the project is to take advantage of the best features of these fuzzers and gather them together into a new tool in order to efficiently fuzz python applications and libraries.</p>
 <ol>
-<li><a href="#how-it-works">How it works</a></li>
-<li><a href="#setting-up-our-fuzzing-environment">Setting up our fuzzing environment</a>
+<li><a href="#-how-it-works">🕵️ How it works</a></li>
+<li><a href="#-setting-up-our-fuzzing-environment">👍 Setting up our fuzzing environment</a>
 <ol>
-<li><a href="#installing-frelatage">Installing Frelatage</a></li>
-<li><a href="#creation-of-a-corpus">Creation of a corpus</a></li>
-<li><a href="#dictionary-based-optimization">Dictionary-based optimization</a></li>
+<li><a href="#-installing-frelatage">⚙️ Installing Frelatage</a></li>
+<li><a href="#-creation-of-a-corpus">📝 Creation of a corpus</a></li>
+<li><a href="#-dictionary-based-optimization">📙 Dictionary-based optimization</a></li>
 </ol>
 </li>
-<li><a href="#writing-the-fuzzing-harness">Writing the fuzzing harness</a></li>
-<li><a href="#running-the-fuzzer">Running the fuzzer</a></li>
-<li><a href="#triaging-the-crashes-reports">Triaging the crashes reports</a></li>
-<li><a href="#upcoming-features">Upcoming features</a></li>
+<li><a href="#-writing-the-fuzzing-harness">✍️ Writing the fuzzing harness</a></li>
+<li><a href="#-running-the-fuzzer">🦘 Running the fuzzer</a></li>
+<li><a href="#-triaging-the-crashes-reports">💥 Triaging the crashes reports</a></li>
+<li><a href="#-upcoming-features">👉 Upcoming features</a></li>
 </ol>
-<h2 id="how-it-works">How it works</h2>
+<h3 id="-how-it-works">🕵️ How it works</h3>
 <p>The idea behind the design of Frelatage is the usage of a <em>genetic algorithm</em> to generate mutations that will cover as much code as possible (frelatage is a <strong>coverage-based fuzzer</strong>). The process of a fuzzing cycle can be roughly summarized with this diagram:</p>
-<script async type="application/javascript" src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js">
-    var config = {
-      startOnLoad:true,
-      theme:'neutral',
-      align:'center'
-    };
-    mermaid.initialize(config);
-  </script>
-  
-  <div class="mermaid">
-    
+<script
+  type="application/javascript"
+  src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"
+></script>
+<script>
+  var config = {
+    startOnLoad: true,
+    theme:'dark',
+    align:'center',
+  };
+  mermaid.initialize(config);
+</script>
+
+<div class="mermaid">
 graph TB
 
     m1(Mutation 1) --> |input| function(Fuzzed function)
@@ -226,14 +244,19 @@ graph TB
     end
      
     style function fill:#5388e8,stroke:white,stroke-width:4px
+</div>
 
-  </div>
-<h2 id="setting-up-our-fuzzing-environment">Setting up our fuzzing environment</h2>
-<h4 id="installing-frelatage">Installing Frelatage</h4>
+<style>
+.mermaid {
+  text-align: center;
+}
+</style>
+<h3 id="-setting-up-our-fuzzing-environment">👍 Setting up our fuzzing environment</h3>
+<h4 id="-installing-frelatage">⚙️ Installing Frelatage</h4>
 <p>The package is available on <a href="https://pypi.org/project/frelatage/">PyPi</a> and can be installed simply with pip:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">pip3 install frelatage
-</code></pre></div><h4 id="the-project-structure">The project structure</h4>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Create the main folder</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">pip3 install frelatage
+</code></pre></div><h4 id="-the-project-structure">🏗️ The project structure</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Create the main folder</span>
 mkdir pillow_fuzz
 cd pillow_fuzz
 
@@ -244,10 +267,10 @@ mkdir dict
 <span style="color:#75715e"># Create the fuzzing harness file</span>
 touch pillow_fuzzer.py
 </code></pre></div><p>Once these operations are done, we have a tree structure of this form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">  ├── pillow_fuzzer.py
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">  ├── pillow_fuzzer.py
   │   ├── dict
   │   ├── in
-</code></pre></div><h2 id="creation-of-a-corpus">Creation of a corpus</h2>
+</code></pre></div><h4 id="-creation-of-a-corpus">📝 Creation of a corpus</h4>
 <blockquote>
 <p>A corpus is a set of inputs for a fuzz target. In most contexts, it refers to a set of minimal test inputs that generate maximal code coverage.</p>
 </blockquote>
@@ -281,14 +304,14 @@ touch pillow_fuzzer.py
 </blockquote>
 <p>For this article, we will focus on the <strong>JPEG</strong> format, on the one hand because it is one of the most widespread formats, and on the other hand because it is the format for which it is the easiest to find a corpus (with PNG and GIF).</p>
 <p>There are already pre-made corpus freely available, for the needs of our work we will use this <a href="https://github.com/strongcourage/fuzzing-corpus/tree/master/jpg">one</a></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Download the corpus</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Download the corpus</span>
 svn export https://github.com/strongcourage/fuzzing-corpus/trunk/jpg
 
 <span style="color:#75715e"># Merge all subfolders into the ./in folder</span>
 cp jpg/*/* ./in
 rm -rf jpg
-</code></pre></div><h2 id="dictionary-based-optimization">Dictionary-based optimization</h2>
-<p>A JPEG image consists of a sequence of segments, each beginning with a marker, each of which begins with a 0xFF byte, followed by a byte indicating what kind of marker it is.</p>
+</code></pre></div><h4 id="-dictionary-based-optimizations">📙 Dictionary-based optimizations</h4>
+<p>A JPEG image consists of a sequence of segments, each beginning with a marker, each of which begins with a <code>0xFF</code> byte, followed by a byte indicating what kind of marker it is.</p>
 <table>
 <thead>
 <tr>
@@ -302,7 +325,7 @@ rm -rf jpg
 </tbody>
 </table>
 <p>We will use <a href="https://github.com/Rog3rSm1th/Frelatage/blob/main/dictionaries/jpeg.dict">this dictionary</a> that was written for AFL by Michal Zalewski.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">#
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">#
 # AFL dictionary for JPEG images
 # ------------------------------
 #
@@ -325,14 +348,14 @@ section_ffe0=&#34;\xff\xe0&#34;
 section_ffe1=&#34;\xff\xe1&#34;
 section_fffe=&#34;\xff\xfe&#34;
 </code></pre></div><p>it will be saved in the <code>./dict</code> folder (default folder for dictionaries)</p>
-<h2 id="writing-the-fuzzing-harness">Writing the fuzzing harness</h2>
+<h4 id="-writing-the-fuzzing-harness">✍️ Writing the fuzzing harness</h4>
 <p>Our fuzzing harness will be in <code>pillow_fuzzer.py</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> frelatage
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> frelatage
 <span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> Image
 <span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> ImageFile
 
 <span style="color:#75715e"># Allow PIL to load truncated images</span>
-ImageFile<span style="color:#f92672">.</span>LOAD_TRUNCATED_IMAGES <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+ImageFile<span style="color:#f92672">.</span>LOAD_TRUNCATED_IMAGES <span style="color:#f92672">=</span> True
 
 <span style="color:#75715e"># The function we want to fuzz</span>
 <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">jpeg_fuzz_pillow</span>(image):
@@ -346,7 +369,7 @@ jpeg_corpus <span style="color:#f92672">=</span> frelatage<span style="color:#f9
 f <span style="color:#f92672">=</span> frelatage<span style="color:#f92672">.</span>Fuzzer(jpeg_fuzz_pillow, [jpeg_corpus])
 <span style="color:#75715e"># Launch the fuzzing process</span>
 f<span style="color:#f92672">.</span>fuzz()
-</code></pre></div><h2 id="running-the-fuzzer">Running the fuzzer</h2>
+</code></pre></div><h4 id="-running-the-fuzzer">🦘 Running the fuzzer</h4>
 <p>I have developed frelatage to be highly configurable, so it is possible to change several constants through environment variables:</p>
 <table>
 <thead>
@@ -409,7 +432,7 @@ f<span style="color:#f92672">.</span>fuzz()
 </tbody>
 </table>
 <p>So we start by configuring our fuzzer:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export FRELATAGE_DICTIONARY_ENABLE<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export FRELATAGE_DICTIONARY_ENABLE<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_TIMEOUT_DELAY<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_INPUT_FILE_TMP_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/tmp/frelatage&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_INPUT_MAX_LEN<span style="color:#f92672">=</span><span style="color:#ae81ff">4096</span> <span style="color:#f92672">&amp;&amp;</span>
@@ -417,8 +440,8 @@ export FRELATAGE_MAX_THREADS<span style="color:#f92672">=</span><span style="col
 export FRELATAGE_MAX_CYCLES_WITHOUT_NEW_PATHS<span style="color:#f92672">=</span><span style="color:#ae81ff">5000</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_INPUT_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./in&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./dict&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
-</code></pre></div><p>Then we launch it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python3 pillow_fuzzer.py
+</code></pre></div><p>Then we launch it</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python3 pillow_fuzzer.py
 </code></pre></div><table>
 <thead>
 <tr>
@@ -426,8 +449,8 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 </tr>
 </thead>
 </table>
-<p>The fuzzing process can take from a few hours to several days, depending on the new paths found by fuzzing during the process.</p>
-<h2 id="triaging-the-crashes-reports">Triaging the crashes reports</h2>
+<p>The fuzzing process can take from a <strong>few hours</strong> to <strong>several days</strong>, depending on the new paths found by fuzzing during the process.</p>
+<h4 id="-triaging-the-crashes-reports">💥 Triaging the crashes reports</h4>
 <p>now enters the less pleasant part, namely triaging the crashes.</p>
 <blockquote>
 <p><strong>Crash triage</strong> involves examining each crash discovered by Frelatage to determine whether the crash might be worth investigating further (for security researchers, this typically means determining whether the crash is likely due to a vulnerability) and, if so, what the root cause of the crash is. Reviewing each crash in detail can be very time consuming, especially if the fuzzer has identified dozens or hundreds of crashes. This will probably be the case if you leave Frelatage running for several hours/days.</p>
@@ -440,7 +463,7 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 <li><em><strong>err_pos</strong></em>: Line where an error occurred, <em>e.g. 34</em></li>
 </ul>
 <p>-&gt; The report directory is in the following form and contains files passed as argument:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    ├── out
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    ├── out
     │   ├── id:&lt;crash ID&gt;,err:&lt;error type&gt;,err_file:&lt;error file&gt;,err_pos:&lt;err_pos&gt;
     │       ├── input
     │       ├── 0
@@ -459,12 +482,12 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 </tr>
 </tbody>
 </table>
-<h4 id="read-a-report">Read a report</h4>
+<h4 id="-read-a-report">📄 Read a report</h4>
 <p>Inputs passed to a function are serialized using the pickle module before being saved in the <code>&lt;report_folder&gt;/input</code> file. It is therefore necessary to deserialize it to be able to read the contents of the file. This action can be performed with <a href="https://github.com/Rog3rSm1th/Frelatage/blob/main/scripts/read_report.py">this script</a>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./read_report.py input
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./read_report.py input
 
 <span style="color:#f92672">{</span><span style="color:#e6db74">&#39;input&#39;</span>: <span style="color:#f92672">[{</span><span style="color:#e6db74">&#39;value&#39;</span>: <span style="color:#e6db74">&#39;/tmp/frelatage/0/0/0e8ef3773a13824c42f021c1af856c351effa6a2-2&#39;</span>, <span style="color:#e6db74">&#39;file&#39;</span>: True<span style="color:#f92672">}]}</span>
-</code></pre></div><h2 id="upcoming-features">Upcoming features</h2>
+</code></pre></div><h4 id="-upcoming-features">👉 Upcoming features</h4>
 <p>Frelatage is still in active development, so what has been written above may (will?) change, as I plan to work on new features to make my fuzzer even more effective.</p>
 <p>Here are the features I plan to implement in the next few weeks:</p>
 <ul>
@@ -473,7 +496,7 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 <li>A more colorful interface (who wants to work with dull tools?)</li>
 </ul>
 <p>To keep up to date with the changes made to Frelatage, the very best way is to look at the <a href="https://github.com/Rog3rSm1th/Frelatage">Github repo</a></p>
-<h3 id="thanks-for-reading">Thanks for reading!</h3>
+<h4 id="-thanks-for-reading">😃 Thanks for reading!</h4>
 <p>for more informations or suggestions, you can contact me at: <a href="mailto:r0g3r5@protonmail.com">r0g3r5@protonmail.com</a>, or on twitter at <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
 
       </div>
@@ -489,7 +512,6 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
         <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/python/">python</a></span>
         <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/fuzzing/">fuzzing</a></span>
         <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/frelatage/">frelatage</a></span>
-        <span class="tag"><a href="https://Rog3rSm1th.github.io/tags/0day/">0day</a></span>
         
     </p>
 
@@ -510,7 +532,7 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        1620 Words
+        1650 Words
       </p>
 
       <p>
@@ -634,11 +656,18 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 
         <div class="pagination__buttons">
             
+            <span class="button previous">
+                <a href="https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/">
+                    <span class="button__icon">←</span>
+                    <span class="button__text">Some experiments with Cairo 1.0</span>
+                </a>
+            </span>
+            
 
             
             <span class="button next">
-                <a href="https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/">
-                    <span class="button__text">My RISC-V development environment for programming and reverse engineering purposes</span>
+                <a href="https://Rog3rSm1th.github.io/posts/kharma/">
+                    <span class="button__text">Kharma: A new alternative to dharma for grammar-based fuzzing</span>
                     <span class="button__icon">→</span>
                 </a>
             </span>
@@ -668,7 +697,7 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 
 
 
-<script type="text/javascript" src="/bundle.min.599099f1f14b78b657d524b28e10e0c5098e7cd46e9c7aed73d577068a276c3ff1bb234cbf29cb313333e83cf411727b43157c91ce5b809e2ffc81664614608e.js" integrity="sha512-WZCZ8fFLeLZX1SSyjhDgxQmOfNRunHrtc9V3BoonbD/xuyNMvynLMTMz6Dz0EXJ7QxV8kc5bgJ4v/IFmRhRgjg=="></script>
+<script type="text/javascript" src="/bundle.min.97a8045a726eccf303b74163251eb214dcb8fce3e0eaddb67866dc97cd45bb5954e4edd26e063cf1b285743e3331ab3a31a0ba5703b1fced4a406fc7b7205eb3.js" integrity="sha512-l6gEWnJuzPMDt0FjJR6yFNy4/OPg6t22eGbcl81Fu1lU5O3SbgY88bKFdD4zMas6MaC6VwOx/O1KQG/HtyBesw=="></script>
 
 
 

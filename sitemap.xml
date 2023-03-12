@@ -1,54 +1,143 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
   <url>
-    <loc>https://Rog3rSm1th.github.io/tags/0day/</loc>
-    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
+    <loc>https://Rog3rSm1th.github.io/tags/cryptography/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/homomorphic/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/posts/okamoto-uchiyama/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/okamoto-uchiyama/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/posts/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/</loc>
+    <lastmod>2023-02-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/exploit/</loc>
+    <lastmod>2023-02-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/posts/memory-corruption-bugs-in-python/</loc>
+    <lastmod>2023-02-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/python/</loc>
+    <lastmod>2023-02-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/cairo/</loc>
+    <lastmod>2023-01-15T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/programming/</loc>
+    <lastmod>2023-01-15T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</loc>
+    <lastmod>2023-01-15T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/zkp/</loc>
+    <lastmod>2023-01-15T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/tags/frelatage/</loc>
     <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/tags/fuzzing/</loc>
     <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</loc>
     <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/posts/</loc>
-    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/tags/python/</loc>
-    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/</loc>
-    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/tags/</loc>
-    <lastmod>2022-03-18T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/posts/kharma/</loc>
+    <lastmod>2022-02-16T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</loc>
     <lastmod>2022-01-10T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/tags/programming/</loc>
-    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/tags/risc-v/</loc>
     <lastmod>2022-01-10T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/about/</loc>
     <lastmod>2021-06-10T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://Rog3rSm1th.github.io/tags/exploit/</loc>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/contact/</loc>
     <lastmod>2021-06-10T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/</loc>
     <lastmod>2021-06-10T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/tags/srop/</loc>
     <lastmod>2021-06-10T00:00:00+00:00</lastmod>
-  </url><url>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/tags/challenge/</loc>
+    <lastmod>2021-04-07T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</loc>
+    <lastmod>2021-04-07T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/blog/</loc>
-  </url><url>
+  </url>
+  
+  <url>
     <loc>https://Rog3rSm1th.github.io/series/</loc>
   </url>
+  
 </urlset>

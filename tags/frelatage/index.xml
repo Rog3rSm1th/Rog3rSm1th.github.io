@@ -14,7 +14,7 @@
       <pubDate>Fri, 18 Mar 2022 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</guid>
-      <description>What is fuzzing?  Fuzzing or fuzz testing is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
+      <description>🧐 What is fuzzing?  Fuzzing or fuzz testing is an effective way to find bigs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
     </item>
     
   </channel>

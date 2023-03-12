@@ -14,7 +14,7 @@
       <pubDate>Thu, 10 Jun 2021 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/</guid>
-      <description>I wrote this article in order to synthesize the different methods I have encountered to exploit a binary with SROP, it is also a preparatory work for the development of a tool allowing to automatically search in a binary the elements useful to the creation of a SROP exploit.
+      <description>If you&amp;rsquo;re interested in binary exploitation, you may have heard of SROP (Sigreturn Oriented Programming), a technique that leverages a program&amp;rsquo;s signal handling mechanism to gain control over its execution flow. In this article, we&amp;rsquo;ll explore different methods to exploit a binary with SROP, and discuss a tool that can automate the process of finding the necessary elements for a successful SROP exploit.
  Since its first presentation at the 35th Security and Privacy IEEE conference in 2014, the SROP method has been the subject of several papers, as well as numerous CTF challenges, however, it remains difficult to find a comprehensive paper on this topic, so this will be the focus of this article.</description>
     </item>
     

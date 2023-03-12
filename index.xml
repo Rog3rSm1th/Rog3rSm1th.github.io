@@ -7,14 +7,52 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-    <lastBuildDate>Fri, 18 Mar 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://Rog3rSm1th.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 25 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://Rog3rSm1th.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Implementing the Okamoto-Uchiyama cryptosystem in Rust</title>
+      <link>https://Rog3rSm1th.github.io/posts/okamoto-uchiyama/</link>
+      <pubDate>Sat, 25 Feb 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/okamoto-uchiyama/</guid>
+      <description>The Okamoto-Uchiyama cryptosystem is a semantically secure, asymmetric encryption algorithm. It was first introduced in 1998 by Tatsuaki Okamoto and Shigenori Uchiyama. The method is additive-homomorphic, which means that the plaintexts are added by multiplying two ciphertexts. It is therefore not necessary to decrypt the ciphertexts in order to be able to operate on the plaintexts.
+ While searching for implementations of this algorithm on github, I realized that there were only two rough implementations.</description>
+    </item>
+    
+    <item>
+      <title>Memory corruption bugs ? In Python ???!</title>
+      <link>https://Rog3rSm1th.github.io/posts/memory-corruption-bugs-in-python/</link>
+      <pubDate>Thu, 16 Feb 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/memory-corruption-bugs-in-python/</guid>
+      <description>When I published Frelatage a year ago, I was often told: &amp;ldquo;Why fuzz python?, there is nothing interesting to find in this language&amp;rdquo;. Obviously, when people think of fuzzing, they think about memory corruption vulnerabilities, and therefore often assume that only codebases written in C/C++ can have this type of vulnerability. However, it should be noted that a significant number of python libraries have at least one part written in C, mostly for performance reasons.</description>
+    </item>
+    
+    <item>
+      <title>Some experiments with Cairo 1.0</title>
+      <link>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</link>
+      <pubDate>Sun, 15 Jan 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</guid>
+      <description>Starkware has recently released the 1.0 version of its Cairo language, a programming language designed for writing provable programs using zero-knowledge proofs. The new version introduces a new syntax inspired by Rust, as well as a host of new features that make it easier than ever to write secure and efficient code.
+ ✨ My attempt at Cairo 1.0 I was eager to give Cairo 1.0 a try. To test out the language, I decided to write a few mathematical functions that would showcase its capabilities (GCD, pow, binomial coefficient, factorial).</description>
+    </item>
+    
     <item>
       <title>Fuzzing Pillow with Frelatage to find bugs and vulnerabilities</title>
       <link>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</link>
       <pubDate>Fri, 18 Mar 2022 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</guid>
-      <description>What is fuzzing?  Fuzzing or fuzz testing is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
+      <description>🧐 What is fuzzing?  Fuzzing or fuzz testing is an effective way to find bigs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
+    </item>
+    
+    <item>
+      <title>Kharma: A new alternative to dharma for grammar-based fuzzing</title>
+      <link>https://Rog3rSm1th.github.io/posts/kharma/</link>
+      <pubDate>Wed, 16 Feb 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/kharma/</guid>
+      <description>🏭 Grammar based fuzzing As a developer, you&amp;rsquo;ve probably had to do some kind of testing at some point in your career. One of the most effective ways to test code is by doing fuzz testing, which involves generating random inputs to your program in order to try and find unexpected behavior. One way to do this is by using a tool like Dharma, which generates inputs from a grammar.</description>
     </item>
     
     <item>
@@ -23,18 +61,28 @@
       <pubDate>Mon, 10 Jan 2022 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</guid>
-      <description>First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
- The applications of this new architecture are multiple, here is a non-exhaustive list of examples :</description>
+      <description>🧐 First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
+ The applications of this new architecture are multiple, here is a non-exhaustive list of examples:</description>
     </item>
     
     <item>
-      <title>About me</title>
+      <title></title>
       <link>https://Rog3rSm1th.github.io/about/</link>
       <pubDate>Thu, 10 Jun 2021 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/about/</guid>
-      <description>Hi ! I&amp;rsquo;m Rog3rSm1th, and I&amp;rsquo;m a 21 years old French computer enthusiast.
- Contact : r0g3r5@protonmail.com Twitter Github Root-Me  </description>
+      <description>Hello 👋
+I&amp;rsquo;m Rog3r, a 22 years old developper living in France. I&amp;rsquo;m also interested in cybersecurity, lockpicking and OSINT.
+I also work as a freelancer and would be happy to discuss about your project with you! 😃</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://Rog3rSm1th.github.io/contact/</link>
+      <pubDate>Thu, 10 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/contact/</guid>
+      <description> mail r0g3r5@protonmail.com twitter github root-me PGP fingerprint B29184C42A004C814DF8548D4F524CD5AC4F3072  </description>
     </item>
     
     <item>
@@ -43,8 +91,18 @@
       <pubDate>Thu, 10 Jun 2021 00:00:00 +0000</pubDate>
       
       <guid>https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/</guid>
-      <description>I wrote this article in order to synthesize the different methods I have encountered to exploit a binary with SROP, it is also a preparatory work for the development of a tool allowing to automatically search in a binary the elements useful to the creation of a SROP exploit.
+      <description>If you&amp;rsquo;re interested in binary exploitation, you may have heard of SROP (Sigreturn Oriented Programming), a technique that leverages a program&amp;rsquo;s signal handling mechanism to gain control over its execution flow. In this article, we&amp;rsquo;ll explore different methods to exploit a binary with SROP, and discuss a tool that can automate the process of finding the necessary elements for a successful SROP exploit.
  Since its first presentation at the 35th Security and Privacy IEEE conference in 2014, the SROP method has been the subject of several papers, as well as numerous CTF challenges, however, it remains difficult to find a comprehensive paper on this topic, so this will be the focus of this article.</description>
+    </item>
+    
+    <item>
+      <title>Solving Advent of code, but with a different programming language for each day !</title>
+      <link>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</guid>
+      <description>Advent of Code is an annual programming challenge that occurs every December, where participants attempt to solve a set of daily puzzles that range in difficulty from easy to hard. I decided to challenge myself by attempting to solve each day&amp;rsquo;s puzzle from the 2015 edition using a different programming language.
+ 🤔 Why ? The goal of this project was to broaden my horizons and explore the various programming paradigms that exist, ranging from functional programming to imperative programming, and from object-oriented programming to declarative programming.</description>
     </item>
     
   </channel>

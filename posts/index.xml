@@ -6,8 +6,308 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>en-us</language>
         <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-        <lastBuildDate>Fri, 18 Mar 2022 00:00:00 +0000</lastBuildDate>
+        <lastBuildDate>Sat, 25 Feb 2023 00:00:00 +0000</lastBuildDate>
         <atom:link href="https://Rog3rSm1th.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+        
+        <item>
+            <title>Implementing the Okamoto-Uchiyama cryptosystem in Rust</title>
+            <link>https://Rog3rSm1th.github.io/posts/okamoto-uchiyama/</link>
+            <pubDate>Sat, 25 Feb 2023 00:00:00 +0000</pubDate>
+            
+            <guid>https://Rog3rSm1th.github.io/posts/okamoto-uchiyama/</guid>
+            <description>The Okamoto-Uchiyama cryptosystem is a semantically secure, asymmetric encryption algorithm. It was first introduced in 1998 by Tatsuaki Okamoto and Shigenori Uchiyama. The method is additive-homomorphic, which means that the plaintexts are added by multiplying two ciphertexts. It is therefore not necessary to decrypt the ciphertexts in order to be able to operate on the plaintexts.
+ While searching for implementations of this algorithm on github, I realized that there were only two rough implementations.</description>
+            <content type="html"><![CDATA[<blockquote>
+<p>The <strong>Okamoto-Uchiyama cryptosystem</strong> is a semantically secure, asymmetric encryption algorithm. It was first introduced in 1998 by Tatsuaki Okamoto and Shigenori Uchiyama. The method is <em>additive-homomorphic</em>, which means that the plaintexts are added by multiplying two ciphertexts. It is therefore not necessary to decrypt the ciphertexts in order to be able to operate on the plaintexts.</p>
+</blockquote>
+<p>While searching for implementations of this algorithm on github, I realized that there were only two rough implementations. One in python and one in Go and that they were only at the state of proof of concept. With this in mind (and also because I was looking for a project to get my hands on in Rust), I decided to write an implementation of this cryptosystem. Which you can find <a href="https://github.com/Rog3rSm1th/okamoto-uchiyama-rust">here</a>.</p>
+<p>Table of contents:</p>
+<ul>
+<li><a href="#-the-cryptosystem">🔒 The cryptosystem</a></li>
+<li><a href="#-encrypt-and-decrypt">🔑 Encrypt and Decrypt</a></li>
+<li><a href="#-homomorphic">🧐 Homomorphic ?</a></li>
+<li><a href="#-cool-things-i-discovered-while-creating-this-project">😎 Cool things I discovered while creating this project</a></li>
+</ul>
+<h3 id="-the-cryptosystem">🔒 The cryptosystem</h3>
+<h4 id="generate-a-key-pair">Generate a key pair</h4>
+<blockquote>
+<p>I describe the cryptosystem here in broad brush strokes, but for those who want a more formal definition, you can find the original publication presenting it <a href="https://citeseerx.ist.psu.edu/document?repid=rep1&amp;type=pdf&amp;doi=9e0487863dc2be542d2c4937ddb5966792cd3d12">here</a>.</p>
+</blockquote>
+<p>A <em>public/private key pair</em> is generated as follow:</p>
+<ol>
+<li>Generate two large primes  $p$ and  $q$.</li>
+<li>Compute  $n=p^{2}q$.</li>
+<li>Choose a random integer  $g\in {2\dots n-1}$  such that  $g^{p-1}\not \equiv 1\mod p^{2}$.</li>
+<li>Compute  $h=g^{n}{\bmod {n}}$.</li>
+</ol>
+<p>The public key is then $(n,g,h)$  and the private key is  $(p,q)$.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> num_bigint_dig::BigUint;
+<span style="color:#66d9ef">use</span> okamoto_uchiyama::{OkamotoUchiyama, PrivateKey, PublicKey};
+<span style="color:#75715e">// Initialization
+</span><span style="color:#75715e">// In this exemple we use a 1024 bits key
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> length <span style="color:#f92672">=</span> okamoto_uchiyama::key::KeySize::Bits1024;
+<span style="color:#66d9ef">let</span> okamoto_uchiyama <span style="color:#f92672">=</span> OkamotoUchiyama::init(length);
+
+<span style="color:#75715e">// Generate the key pair
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> private_key <span style="color:#f92672">=</span> okamoto_uchiyama.generate_private_key();
+<span style="color:#66d9ef">let</span> public_key <span style="color:#f92672">=</span> private_key.public_key.clone();
+</code></pre></div><p>It is possible to generate keys of <em>512</em>, <em>1024</em>, <em>2048</em> or <em>4096</em> bits using <code>okamoto_uchiyama::key::KeySize::Bits512</code>, <code>okamoto_uchiyama::key::KeySize::Bits1024</code>, <code>okamoto_uchiyama::key::KeySize::Bits2048</code>, <code>okamoto_uchiyama::key::KeySize::Bits4096</code>.</p>
+<h3 id="load-existing-keys">Load existing keys</h3>
+<p>You can load existing private and public keys</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> num_bigint_dig::BigUint;
+<span style="color:#66d9ef">use</span> okamoto_uchiyama::{OkamotoUchiyama, PrivateKey, PublicKey};
+
+<span style="color:#66d9ef">let</span> public_key <span style="color:#f92672">=</span> PublicKey::new(
+    
+    <span style="color:#f92672">&amp;</span>BigUint::from(<span style="color:#ae81ff">9432233159</span><span style="color:#66d9ef">u64</span>),
+    <span style="color:#f92672">&amp;</span>BigUint::from(<span style="color:#ae81ff">8083706871</span><span style="color:#66d9ef">u64</span>),
+    <span style="color:#f92672">&amp;</span>BigUint::from(<span style="color:#ae81ff">7988052977</span><span style="color:#66d9ef">u64</span>),
+);
+<span style="color:#66d9ef">let</span> private_key <span style="color:#f92672">=</span> PrivateKey::new(
+    <span style="color:#f92672">&amp;</span>public_key,
+    <span style="color:#f92672">&amp;</span>BigUint::from(<span style="color:#ae81ff">2003</span><span style="color:#66d9ef">u64</span>),
+    <span style="color:#f92672">&amp;</span>BigUint::from(<span style="color:#ae81ff">2351</span><span style="color:#66d9ef">u64</span>),
+);
+</code></pre></div><h3 id="-encrypt-and-decrypt">🔑 Encrypt and Decrypt</h3>
+<h4 id="encryption">Encryption</h4>
+<p>A message  $m&lt;p$  can be encrypted with the public key  $(n,g,h)$  as follows.</p>
+<ol>
+<li>Choose a random integer  $r\in {1\dots n-1}$.</li>
+<li>Compute  $c=g^{m}h^{r}{\bmod {n}}$.</li>
+</ol>
+<p>The value  $c$  is the encryption of  $m$.</p>
+<h4 id="decryption">Decryption</h4>
+<p>An encrypted message $c$ can be decrypted with the private key  $(p,q)$ as follows.</p>
+<ol>
+<li>Compute  $a={\frac {(c^{p-1}{\bmod {p^{2}}})-1}{p}}$.</li>
+<li>Compute  $b={\frac {(g^{p-1}{\bmod {p^{2}}})-1}{p}}$.  $a$  and  $b$  will be integers.</li>
+<li>Using the  Extended Euclidean Algorithm to compute the inverse of  $b$  modulo  $p$:
+$b'=b^{-1}{\bmod {p}}$.</li>
+<li>Compute  $m=ab'{\bmod {p}}$.</li>
+</ol>
+<p>The value  $m$ is the decryption of  $c$.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span>  num_bigint_dig::BigUint;
+<span style="color:#66d9ef">use</span>  okamoto_uchiyama::{OkamotoUchiyama,  PrivateKey,  PublicKey};
+
+<span style="color:#66d9ef">let</span>  cleartext <span style="color:#f92672">=</span> BigUint::from(<span style="color:#ae81ff">6</span><span style="color:#66d9ef">u64</span>);
+
+<span style="color:#75715e">// Initialization
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  length <span style="color:#f92672">=</span> okamoto_uchiyama::key::KeySize::Bits1024;
+<span style="color:#66d9ef">let</span>  okamoto_uchiyama <span style="color:#f92672">=</span> OkamotoUchiyama::init(length);
+
+<span style="color:#75715e">// Generate the key pair
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  private_key <span style="color:#f92672">=</span> okamoto_uchiyama.generate_private_key();
+<span style="color:#66d9ef">let</span>  public_key <span style="color:#f92672">=</span> private_key.public_key.clone();
+
+<span style="color:#75715e">// Encrypt and decrypt
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  c <span style="color:#f92672">=</span> OkamotoUchiyama::encrypt(<span style="color:#f92672">&amp;</span>cleartext,  <span style="color:#f92672">&amp;</span>public_key);
+<span style="color:#66d9ef">let</span>  m <span style="color:#f92672">=</span> OkamotoUchiyama::decrypt(<span style="color:#f92672">&amp;</span>cleartext,  <span style="color:#f92672">&amp;</span>private_key);
+</code></pre></div><h3 id="-homomorphic-">🧐 Homomorphic ?</h3>
+<blockquote>
+<p><strong>Homomorphic encryption</strong> is a form of encryption that allows computations to be performed on encrypted data without first having to decrypt it. The resulting computations are left in an encrypted form which, when decrypted, result in an output that is identical to that produced had the operations been performed on the unencrypted data.</p>
+</blockquote>
+<p>A notable feature of the Okamoto-Uchiyama cryptosystem is its homomorphic properties.</p>
+<p>However, the Okamoto-Uchiyama only allows <strong>Partially homomorphic encryption</strong> which means that you can perform additions on encrypted data but not multiplications.</p>
+<h4 id="add-two-encrypted-ciphertexts">Add two encrypted ciphertexts</h4>
+<p>Since this scheme makes possible <em>Homomorphic addition</em> of plaintexts, the product of two ciphertexts will decrypt to the sum of their corresponding plaintexts</p>
+<p>-&gt; $E(m1) \cdot E(m2) = E(m1 + m2)$</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span>  num_bigint_dig::BigUint;
+<span style="color:#66d9ef">use</span>  okamoto_uchiyama::{OkamotoUchiyama,  PrivateKey,  PublicKey};
+
+<span style="color:#66d9ef">let</span>  m1  <span style="color:#f92672">=</span>  BigUint::from(<span style="color:#ae81ff">6</span><span style="color:#66d9ef">u64</span>);
+<span style="color:#66d9ef">let</span>  m2  <span style="color:#f92672">=</span>  BigUint::from(<span style="color:#ae81ff">7</span><span style="color:#66d9ef">u64</span>);
+
+<span style="color:#75715e">// Initialization
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  length  <span style="color:#f92672">=</span>  okamoto_uchiyama::key::KeySize::Bits1024;
+<span style="color:#66d9ef">let</span>  okamoto_uchiyama  <span style="color:#f92672">=</span>  OkamotoUchiyama::init(length);
+
+<span style="color:#75715e">// Generate the key pair
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  private_key  <span style="color:#f92672">=</span>  okamoto_uchiyama.generate_private_key();
+<span style="color:#66d9ef">let</span>  public_key  <span style="color:#f92672">=</span>  private_key.public_key.clone();
+
+<span style="color:#66d9ef">let</span>  c1  <span style="color:#f92672">=</span>  OkamotoUchiyama::encrypt(<span style="color:#f92672">&amp;</span>m1,  <span style="color:#f92672">&amp;</span>public_key);
+<span style="color:#66d9ef">let</span>  c2  <span style="color:#f92672">=</span>  OkamotoUchiyama::encrypt(<span style="color:#f92672">&amp;</span>m2,  <span style="color:#f92672">&amp;</span>public_key);
+
+<span style="color:#66d9ef">let</span>  c1_c2  <span style="color:#f92672">=</span>  public_key.homomorphic_encrypt_two(<span style="color:#f92672">&amp;</span>c1,  <span style="color:#f92672">&amp;</span>c2).unwrap();
+<span style="color:#75715e">// Result is c1 + c2 = 6 + 7 = 13
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  decrypted_c1_c2  <span style="color:#f92672">=</span>  OkamotoUchiyama::decrypt(<span style="color:#f92672">&amp;</span>c1_c2,  <span style="color:#f92672">&amp;</span>private_key);
+</code></pre></div><h4 id="add-multiple-encrypted-ciphertexts">Add multiple encrypted ciphertexts</h4>
+<p>-&gt; $E(m_1) \cdot E(m_2) \cdot  &hellip; \cdot E(m_n) = E(m_1 + m_2 + &hellip; + m_n)$</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span>  num_bigint_dig::BigUint;
+<span style="color:#66d9ef">use</span>  okamoto_uchiyama::{OkamotoUchiyama,  PrivateKey,  PublicKey};
+
+<span style="color:#66d9ef">let</span>  m1  <span style="color:#f92672">=</span>  BigUint::from(<span style="color:#ae81ff">6</span><span style="color:#66d9ef">u64</span>);
+<span style="color:#66d9ef">let</span>  m2  <span style="color:#f92672">=</span>  BigUint::from(<span style="color:#ae81ff">7</span><span style="color:#66d9ef">u64</span>);
+<span style="color:#66d9ef">let</span>  m3  <span style="color:#f92672">=</span>  BigUint::from(<span style="color:#ae81ff">8</span><span style="color:#66d9ef">u64</span>);
+
+<span style="color:#75715e">// Initialization
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  length  <span style="color:#f92672">=</span>  okamoto_uchiyama::key::KeySize::Bits1024;
+<span style="color:#66d9ef">let</span>  okamoto_uchiyama  <span style="color:#f92672">=</span>  OkamotoUchiyama::init(length);
+
+<span style="color:#75715e">// Generate the key pair
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  private_key  <span style="color:#f92672">=</span>  okamoto_uchiyama.generate_private_key();
+<span style="color:#66d9ef">let</span>  public_key  <span style="color:#f92672">=</span>  private_key.public_key.clone();
+
+<span style="color:#66d9ef">let</span>  c1  <span style="color:#f92672">=</span>  OkamotoUchiyama::encrypt(<span style="color:#f92672">&amp;</span>m1,  <span style="color:#f92672">&amp;</span>public_key);
+<span style="color:#66d9ef">let</span>  c2  <span style="color:#f92672">=</span>  OkamotoUchiyama::encrypt(<span style="color:#f92672">&amp;</span>m2,  <span style="color:#f92672">&amp;</span>public_key);
+<span style="color:#66d9ef">let</span>  c3  <span style="color:#f92672">=</span>  OkamotoUchiyama::encrypt(<span style="color:#f92672">&amp;</span>m3,  <span style="color:#f92672">&amp;</span>public_key);
+
+<span style="color:#66d9ef">let</span>  c1_c2_c3  <span style="color:#f92672">=</span>  public_key
+	.homomorphic_encrypt_multiple(vec<span style="color:#f92672">!</span>[<span style="color:#f92672">&amp;</span>c1,  <span style="color:#f92672">&amp;</span>c2,  <span style="color:#f92672">&amp;</span>c3])
+	.unwrap();
+	
+<span style="color:#75715e">// Result is c1 + c2 + c2 = 6 + 7 + 8 = 21
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span>  decrypted_c1_c2_c3  <span style="color:#f92672">=</span>  OkamotoUchiyama::decrypt(<span style="color:#f92672">&amp;</span>c1_c2_c3,  <span style="color:#f92672">&amp;</span>private_key);
+</code></pre></div><h3 id="-cool-things-i-discovered-while-creating-this-project">😎 Cool things I discovered while creating this project</h3>
+<p>Anyone who has implemented a cryptographic algorithm knows that we often work with very large numbers. Therefore I had started to work with the <a href="https://github.com/rust-num/num-bigint"><code>num-bigint</code></a> library, which worked very well at first.  But I discovered this pretty cool fork <a href="https://github.com/dignifiedquire/num-bigint"><code>num-bigint-dig</code></a> which implement a lot of functions useful in Cryptography such as the <em>modular inverse</em> which I used in my code.</p>
+<p>I also came across <a href="https://www.researchgate.net/publication/327950570_An_Implementation_of_Online_Voting_System_using_Okamoto-Uchiyama_Encryption_Scheme/link/5baedeaf92851ca9ed2e5b74/download">this pretty cool paper</a> which is a PoC of a voting system using Okamoto Uchiyama&rsquo;s cryptosystem.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Memory corruption bugs ? In Python ???!</title>
+            <link>https://Rog3rSm1th.github.io/posts/memory-corruption-bugs-in-python/</link>
+            <pubDate>Thu, 16 Feb 2023 00:00:00 +0000</pubDate>
+            
+            <guid>https://Rog3rSm1th.github.io/posts/memory-corruption-bugs-in-python/</guid>
+            <description>When I published Frelatage a year ago, I was often told: &amp;ldquo;Why fuzz python?, there is nothing interesting to find in this language&amp;rdquo;. Obviously, when people think of fuzzing, they think about memory corruption vulnerabilities, and therefore often assume that only codebases written in C/C++ can have this type of vulnerability. However, it should be noted that a significant number of python libraries have at least one part written in C, mostly for performance reasons.</description>
+            <content type="html"><![CDATA[<blockquote>
+<p>When I published <a href="https://github.com/Rog3rSm1th/frelatage">Frelatage</a> a year ago, I was often told: &ldquo;<em>Why fuzz python?, there is nothing interesting to find in this language</em>&rdquo;. Obviously, when people think of fuzzing, they think about <strong>memory corruption</strong> vulnerabilities, and therefore often assume that only codebases written in C/C++ can have this type of vulnerability. However, it should be noted that a significant number of python libraries have at least one part written in C, mostly for performance reasons.</p>
+</blockquote>
+<p>Here are some examples of python modules written (at least partially) in C and which are therefore potentially vulnerable to memory corruption vulnerabilities:</p>
+<ul>
+<li><a href="https://github.com/python-pillow/Pillow">Pillow</a></li>
+<li><a href="https://github.com/ultrajson/ultrajson">UltraJSON</a></li>
+<li>Most of the <a href="https://github.com/python/cpython/tree/main/Modules">python builtin modules</a></li>
+</ul>
+<p>Table of contents:</p>
+<ul>
+<li><a href="#-create-a-demo-vulnerable-module">🏭 Create a demo vulnerable module</a></li>
+<li><a href="#-finding-the-bug-with-a-fuzzer">🕵️ Finding the bug with a fuzzer</a></li>
+<li><a href="#-conclusion">🎉 Conclusion</a></li>
+</ul>
+<h4 id="-create-a-demo-vulnerable-module">🏭 Create a demo vulnerable module</h4>
+<p>So we will start by writing a vulnerable module for Python in C. Here is a minimal application containing a <code>buffer_overflow_vulnerable</code> method which as its name suggests is vulnerable to a <strong>buffer overflow</strong>. It does only one thing: copy an arbitrary entry into a 667 bytes buffer, causing a buffer overflow in case the entry exceeds 667 bytes.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;Python.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// A Method vulnerable to a buffer overflow.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> PyObject<span style="color:#f92672">*</span> <span style="color:#a6e22e">buffer_overflow_vulnerable</span>(PyObject <span style="color:#f92672">*</span>self, PyObject <span style="color:#f92672">*</span>args) {
+    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> input;
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>PyArg_ParseTuple(args, <span style="color:#e6db74">&#34;s&#34;</span>, <span style="color:#f92672">&amp;</span>input)) {
+        <span style="color:#66d9ef">return</span> NULL;
+    }
+
+    <span style="color:#75715e">/*  /!\ Buffer overflow /!\ */</span>
+    <span style="color:#66d9ef">char</span> buffer[<span style="color:#ae81ff">667</span>] <span style="color:#f92672">=</span> {<span style="color:#ae81ff">0</span>};
+    strcpy(buffer, input);
+
+    Py_RETURN_NONE;
+}
+
+<span style="color:#75715e">// Method definition object for this extension
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> PyMethodDef mymodule_methods[] <span style="color:#f92672">=</span> { 
+    {   
+        <span style="color:#e6db74">&#34;buffer_overflow_vulnerable&#34;</span>, buffer_overflow_vulnerable, METH_VARARGS,
+        <span style="color:#e6db74">&#34;Method vulnerable to a buffer overflow.&#34;</span>
+    },  
+    {NULL, NULL, <span style="color:#ae81ff">0</span>, NULL}
+};
+
+<span style="color:#75715e">// Module definition
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">struct</span> PyModuleDef mymodule_definition <span style="color:#f92672">=</span> { 
+    PyModuleDef_HEAD_INIT,
+    <span style="color:#e6db74">&#34;mymodule&#34;</span>,
+    <span style="color:#e6db74">&#34;A Python module vulnerable to a buffer overflow, for demonstration purposes.&#34;</span>,
+    <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, 
+    mymodule_methods
+};
+
+<span style="color:#75715e">// Module initialization
+</span><span style="color:#75715e"></span>PyMODINIT_FUNC <span style="color:#a6e22e">PyInit_mymodule</span>(<span style="color:#66d9ef">void</span>) {
+    Py_Initialize();
+    <span style="color:#66d9ef">return</span> PyModule_Create(<span style="color:#f92672">&amp;</span>mymodule_definition);
+}
+</code></pre></div><p>Then we create the <code>setup.py</code> file, allowing us to use the method previously created in <em>C</em> inside of a <em>Python</em> module.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python3</span>
+<span style="color:#75715e"># encoding: utf-8</span>
+
+<span style="color:#f92672">from</span> distutils.core <span style="color:#f92672">import</span> setup, Extension
+
+mymodule <span style="color:#f92672">=</span> Extension(<span style="color:#e6db74">&#39;mymodule&#39;</span>, sources <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;mymodule.c&#39;</span>])
+
+setup(name<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;mymodule&#39;</span>,
+      version<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;0.1.0&#39;</span>,
+      description<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;A Python module vulnerable to a buffer overflow, for demonstration purposes.&#39;</span>,
+      ext_modules<span style="color:#f92672">=</span>[mymodule])
+</code></pre></div><p>And now it&rsquo;s time to build our module</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">pip3 install .
+</code></pre></div><p>We test this in a python interpreter, and we see that it works very well</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> mymodule
+<span style="color:#f92672">&gt;&gt;&gt;</span> mymodule<span style="color:#f92672">.</span>buffer_overflow_vulnerable(<span style="color:#e6db74">&#34;a&#34;</span>)
+</code></pre></div><p>Now comes the time to find this bug with the help of a Fuzzer 😈</p>
+<h4 id="-finding-the-bug-with-a-fuzzer">🕵️ Finding the bug with a fuzzer</h4>
+<p>One of the easiest way to find this kind of vulnerabilities is obviously fuzzing, there are different fuzzers for Python, and today I choose to write the harness using <a href="https://github.com/google/atheris"><strong>Atheris</strong></a>.</p>
+<p>Here is the <em>harness</em></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python3</span>
+
+<span style="color:#f92672">import</span> atheris
+
+<span style="color:#66d9ef">with</span> atheris<span style="color:#f92672">.</span>instrument_imports():
+    <span style="color:#f92672">import</span> mymodule 
+    <span style="color:#f92672">import</span> sys
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fuzz_mymodule</span>(input_bytes):
+    fdp <span style="color:#f92672">=</span> atheris<span style="color:#f92672">.</span>FuzzedDataProvider(input_bytes)
+    data <span style="color:#f92672">=</span> fdp<span style="color:#f92672">.</span>ConsumeString(sys<span style="color:#f92672">.</span>maxsize)
+
+    <span style="color:#66d9ef">try</span>:
+        mymodule<span style="color:#f92672">.</span>buffer_overflow_vulnerable(data)
+    <span style="color:#66d9ef">except</span>:
+        <span style="color:#66d9ef">return</span>
+
+atheris<span style="color:#f92672">.</span>Setup(sys<span style="color:#f92672">.</span>argv, fuzz_mymodule)
+atheris<span style="color:#f92672">.</span>Fuzz()
+</code></pre></div><p>I launch the fuzzer, and after a few very long seconds (3) of waiting, a crash occurs</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">*** buffer overflow detected ***: terminated
+==6746== ERROR: libFuzzer: deadly signal
+NOTE: libFuzzer has rudimentary signal handlers.
+      Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+SUMMARY: libFuzzer: deadly signal
+MS: 4 InsertRepeatedBytes-InsertRepeatedBytes-CopyPart-CopyPart-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+artifact_prefix=&#39;./&#39;; Test unit written to ./crash-854298749b437ea327679792bf9cc9addf5876e6
+</code></pre></div><p>We can see that the entry causing the method to crash is 830 bytes long, and therefore exceeds the 667 of our buffer</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">$ ~ wc ./crash-854298749b437ea327679792bf9cc9addf5876e6
+<span style="color:#ae81ff">1</span>   <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">830</span> ./crash-854298749b437ea327679792bf9cc9addf5876e6
+</code></pre></div><h4 id="-conclusion">🎉 Conclusion</h4>
+<p>So we have the proof that memory corruption vulnerabilities are not the privilege of C and C++, but are also present in Python.</p>
+<p>To conclude, I would like to give you a small list of memory corruption vulnerabilities found in Python libs:</p>
+<ul>
+<li><strong>CVE-2022-37454</strong>, <a href="https://mouha.be/sha-3-buffer-overflow/#:~:text=The%20vulnerability%20has%20been%20assigned,3%20implementation%20by%20its%20designers">a buffer overflow in the SHA-3 implementation</a></li>
+<li><strong>CVE-2020-35653</strong> is <a href="https://github.com/python-pillow/Pillow/pull/5174">a heap buffer overflow that could occur when decoding a malicious PCX-format image with Pillow</a></li>
+<li><strong>CVE-2021-45958</strong> which is a <a href="https://github.com/ultrajson/ultrajson/pull/504">buffer overflow in ultrajson</a></li>
+</ul>
+<p>Now you know what you have to fuzz to find vulnerabilities on still little explored grounds !</p>
+<p>happy vulnerability hunting to you 😊</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Some experiments with Cairo 1.0</title>
+            <link>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</link>
+            <pubDate>Sun, 15 Jan 2023 00:00:00 +0000</pubDate>
+            
+            <guid>https://Rog3rSm1th.github.io/posts/cairo1.0-experiments/</guid>
+            <description>Starkware has recently released the 1.0 version of its Cairo language, a programming language designed for writing provable programs using zero-knowledge proofs. The new version introduces a new syntax inspired by Rust, as well as a host of new features that make it easier than ever to write secure and efficient code.
+ ✨ My attempt at Cairo 1.0 I was eager to give Cairo 1.0 a try. To test out the language, I decided to write a few mathematical functions that would showcase its capabilities (GCD, pow, binomial coefficient, factorial).</description>
+            <content type="html"><![CDATA[<blockquote>
+<p>Starkware has recently released the 1.0 version of its Cairo language, a programming language designed for writing provable programs using zero-knowledge proofs. The new version introduces a new syntax inspired by Rust, as well as a host of new features that make it easier than ever to write secure and efficient code.</p>
+</blockquote>
+<h4 id="-my-attempt-at-cairo-10">✨ My attempt at Cairo 1.0</h4>
+<p>I was eager to give Cairo 1.0 a try. To test out the language, I decided to write a few mathematical functions that would showcase its capabilities (GCD, pow, binomial coefficient, factorial).</p>
+<p>-&gt; <a href="https://github.com/Rog3rSm1th/CairoExperiments">https://github.com/Rog3rSm1th/CairoExperiments</a></p>
+]]></content>
+        </item>
         
         <item>
             <title>Fuzzing Pillow with Frelatage to find bugs and vulnerabilities</title>
@@ -15,10 +315,10 @@
             <pubDate>Fri, 18 Mar 2022 00:00:00 +0000</pubDate>
             
             <guid>https://Rog3rSm1th.github.io/posts/fuzzing-python-libraries-frelatage/</guid>
-            <description>What is fuzzing?  Fuzzing or fuzz testing is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
-            <content type="html"><![CDATA[<h2 id="what-is-fuzzing">What is fuzzing?</h2>
+            <description>🧐 What is fuzzing?  Fuzzing or fuzz testing is an effective way to find bigs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: AFL, HongFuzz or wfuzz) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</description>
+            <content type="html"><![CDATA[<h4 id="-what-is-fuzzing">🧐 What is fuzzing?</h4>
 <blockquote>
-<p><em>Fuzzing</em> or <em>fuzz testing</em> is an effective way of finding bugs or vulnerabilities in a software or a library. The program which is used to fuzz is called the fuzzer (for example: <a href="https://github.com/google/AFL">AFL</a>, <a href="https://github.com/google/honggfuzz">HongFuzz</a> or <a href="https://github.com/xmendez/wfuzz">wfuzz</a>) and the program being fuzzed is our target. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a crash.</p>
+<p><em>Fuzzing</em> or <em>fuzz testing</em> is an effective way to find bigs or vulnerabilities in a software or a library. The program which is used to fuzz is called the <em>fuzzer</em> (for example: <a href="https://github.com/google/AFL">AFL</a>, <a href="https://github.com/google/honggfuzz">HongFuzz</a> or <a href="https://github.com/xmendez/wfuzz">wfuzz</a>) and the program being fuzzed is our <em>target</em>. A fuzzer typically starts feeding the target program with random inputs while observing its behaviour. Whenever the target crashes, the fuzzer reports the input which caused the crash to the user as a bug or a <em>crash</em>.</p>
 </blockquote>
 <p>This method has proven its value many times in vulnerabilities and bugs research, as shown in these different articles and videos:</p>
 <ul>
@@ -28,39 +328,42 @@
 <li><a href="https://bananamafia.dev/post/gb-fuzz/">Fuzzing A GameBoy Emulator With AFL++</a></li>
 </ul>
 <p>So a few weeks ago, I immersed myself  into this new world, and after spending a lot of time playing with AFL++, HongFuzz and Atheris on a lot of programs, I felt like writing my own fuzzer, first for learning purposes, then for finding vulnerabilities. A few nights of code later, Frelatage was born.</p>
-<h2 id="frelatage">Frelatage</h2>
+<h4 id="-frelatage">🏭 Frelatage</h4>
 <p>Frelatage is a coverage-based Python fuzzing library which can be used to fuzz python code.</p>
 <p>-&gt; It is a <strong>mutation-based</strong> fuzzer. Meaning, Frelatage generates new inputs by slightly modifying a seed input, using different method such as duplicating a part of the input, or modifying a segment of it.</p>
-<p>-&gt; Frelatage is also a <strong>greybox fuzzer</strong> (not blackbox nor whitebox). Meaning, Frelatage leverages coverage-feedback to learn how to reach deeper into the program. It is not entirely blackbox because Frelatage leverages at least some program analysis. It is not entirely whitebox either because Frelatage does not build on heavyweight program analysis or constraint solving. Instead, Frelatage uses lightweight program instrumentation to glean some information about the <strong>coverage</strong> of a generated input. If a generated input increases coverage, it is used afterwards  for further fuzzing.</p>
-<h4 id="influences">Influences</h4>
+<p>-&gt; Frelatage is also a <strong>greybox fuzzer</strong> (not blackbox nor whitebox). Meaning, Frelatage leverages coverage-feedback to learn how to reach deeper into the program. It is not entirely blackbox because Frelatage leverages at least some program analysis. It is not entirely whitebox either because Frelatage does not build on heavyweight program analysis or constraint solving. Instead, Frelatage uses lightweight program instrumentation to glean some information about the <strong>coverage</strong> of a generated input. If a generated input increases coverage, it is used afterwards for further fuzzing.</p>
+<h4 id="-influences">📕 Influences</h4>
 <p>The development of Frelatage was inspired by various other fuzzers, including <em>AFL/AFL++</em>, <em>Atheris</em> and <em>PythonFuzz</em>.The main purpose of the project is to take advantage of the best features of these fuzzers and gather them together into a new tool in order to efficiently fuzz python applications and libraries.</p>
 <ol>
-<li><a href="#how-it-works">How it works</a></li>
-<li><a href="#setting-up-our-fuzzing-environment">Setting up our fuzzing environment</a>
+<li><a href="#-how-it-works">🕵️ How it works</a></li>
+<li><a href="#-setting-up-our-fuzzing-environment">👍 Setting up our fuzzing environment</a>
 <ol>
-<li><a href="#installing-frelatage">Installing Frelatage</a></li>
-<li><a href="#creation-of-a-corpus">Creation of a corpus</a></li>
-<li><a href="#dictionary-based-optimization">Dictionary-based optimization</a></li>
+<li><a href="#-installing-frelatage">⚙️ Installing Frelatage</a></li>
+<li><a href="#-creation-of-a-corpus">📝 Creation of a corpus</a></li>
+<li><a href="#-dictionary-based-optimization">📙 Dictionary-based optimization</a></li>
 </ol>
 </li>
-<li><a href="#writing-the-fuzzing-harness">Writing the fuzzing harness</a></li>
-<li><a href="#running-the-fuzzer">Running the fuzzer</a></li>
-<li><a href="#triaging-the-crashes-reports">Triaging the crashes reports</a></li>
-<li><a href="#upcoming-features">Upcoming features</a></li>
+<li><a href="#-writing-the-fuzzing-harness">✍️ Writing the fuzzing harness</a></li>
+<li><a href="#-running-the-fuzzer">🦘 Running the fuzzer</a></li>
+<li><a href="#-triaging-the-crashes-reports">💥 Triaging the crashes reports</a></li>
+<li><a href="#-upcoming-features">👉 Upcoming features</a></li>
 </ol>
-<h2 id="how-it-works">How it works</h2>
+<h3 id="-how-it-works">🕵️ How it works</h3>
 <p>The idea behind the design of Frelatage is the usage of a <em>genetic algorithm</em> to generate mutations that will cover as much code as possible (frelatage is a <strong>coverage-based fuzzer</strong>). The process of a fuzzing cycle can be roughly summarized with this diagram:</p>
-<script async type="application/javascript" src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js">
-    var config = {
-      startOnLoad:true,
-      theme:'neutral',
-      align:'center'
-    };
-    mermaid.initialize(config);
-  </script>
-  
-  <div class="mermaid">
-    
+<script
+  type="application/javascript"
+  src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"
+></script>
+<script>
+  var config = {
+    startOnLoad: true,
+    theme:'dark',
+    align:'center',
+  };
+  mermaid.initialize(config);
+</script>
+
+<div class="mermaid">
 graph TB
 
     m1(Mutation 1) --> |input| function(Fuzzed function)
@@ -91,14 +394,19 @@ graph TB
     end
      
     style function fill:#5388e8,stroke:white,stroke-width:4px
+</div>
 
-  </div>
-<h2 id="setting-up-our-fuzzing-environment">Setting up our fuzzing environment</h2>
-<h4 id="installing-frelatage">Installing Frelatage</h4>
+<style>
+.mermaid {
+  text-align: center;
+}
+</style>
+<h3 id="-setting-up-our-fuzzing-environment">👍 Setting up our fuzzing environment</h3>
+<h4 id="-installing-frelatage">⚙️ Installing Frelatage</h4>
 <p>The package is available on <a href="https://pypi.org/project/frelatage/">PyPi</a> and can be installed simply with pip:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">pip3 install frelatage
-</code></pre></div><h4 id="the-project-structure">The project structure</h4>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Create the main folder</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">pip3 install frelatage
+</code></pre></div><h4 id="-the-project-structure">🏗️ The project structure</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Create the main folder</span>
 mkdir pillow_fuzz
 cd pillow_fuzz
 
@@ -109,10 +417,10 @@ mkdir dict
 <span style="color:#75715e"># Create the fuzzing harness file</span>
 touch pillow_fuzzer.py
 </code></pre></div><p>Once these operations are done, we have a tree structure of this form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">  ├── pillow_fuzzer.py
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">  ├── pillow_fuzzer.py
   │   ├── dict
   │   ├── in
-</code></pre></div><h2 id="creation-of-a-corpus">Creation of a corpus</h2>
+</code></pre></div><h4 id="-creation-of-a-corpus">📝 Creation of a corpus</h4>
 <blockquote>
 <p>A corpus is a set of inputs for a fuzz target. In most contexts, it refers to a set of minimal test inputs that generate maximal code coverage.</p>
 </blockquote>
@@ -146,14 +454,14 @@ touch pillow_fuzzer.py
 </blockquote>
 <p>For this article, we will focus on the <strong>JPEG</strong> format, on the one hand because it is one of the most widespread formats, and on the other hand because it is the format for which it is the easiest to find a corpus (with PNG and GIF).</p>
 <p>There are already pre-made corpus freely available, for the needs of our work we will use this <a href="https://github.com/strongcourage/fuzzing-corpus/tree/master/jpg">one</a></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Download the corpus</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Download the corpus</span>
 svn export https://github.com/strongcourage/fuzzing-corpus/trunk/jpg
 
 <span style="color:#75715e"># Merge all subfolders into the ./in folder</span>
 cp jpg/*/* ./in
 rm -rf jpg
-</code></pre></div><h2 id="dictionary-based-optimization">Dictionary-based optimization</h2>
-<p>A JPEG image consists of a sequence of segments, each beginning with a marker, each of which begins with a 0xFF byte, followed by a byte indicating what kind of marker it is.</p>
+</code></pre></div><h4 id="-dictionary-based-optimizations">📙 Dictionary-based optimizations</h4>
+<p>A JPEG image consists of a sequence of segments, each beginning with a marker, each of which begins with a <code>0xFF</code> byte, followed by a byte indicating what kind of marker it is.</p>
 <table>
 <thead>
 <tr>
@@ -167,7 +475,7 @@ rm -rf jpg
 </tbody>
 </table>
 <p>We will use <a href="https://github.com/Rog3rSm1th/Frelatage/blob/main/dictionaries/jpeg.dict">this dictionary</a> that was written for AFL by Michal Zalewski.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">#
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">#
 # AFL dictionary for JPEG images
 # ------------------------------
 #
@@ -190,14 +498,14 @@ section_ffe0=&#34;\xff\xe0&#34;
 section_ffe1=&#34;\xff\xe1&#34;
 section_fffe=&#34;\xff\xfe&#34;
 </code></pre></div><p>it will be saved in the <code>./dict</code> folder (default folder for dictionaries)</p>
-<h2 id="writing-the-fuzzing-harness">Writing the fuzzing harness</h2>
+<h4 id="-writing-the-fuzzing-harness">✍️ Writing the fuzzing harness</h4>
 <p>Our fuzzing harness will be in <code>pillow_fuzzer.py</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> frelatage
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> frelatage
 <span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> Image
 <span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> ImageFile
 
 <span style="color:#75715e"># Allow PIL to load truncated images</span>
-ImageFile<span style="color:#f92672">.</span>LOAD_TRUNCATED_IMAGES <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+ImageFile<span style="color:#f92672">.</span>LOAD_TRUNCATED_IMAGES <span style="color:#f92672">=</span> True
 
 <span style="color:#75715e"># The function we want to fuzz</span>
 <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">jpeg_fuzz_pillow</span>(image):
@@ -211,7 +519,7 @@ jpeg_corpus <span style="color:#f92672">=</span> frelatage<span style="color:#f9
 f <span style="color:#f92672">=</span> frelatage<span style="color:#f92672">.</span>Fuzzer(jpeg_fuzz_pillow, [jpeg_corpus])
 <span style="color:#75715e"># Launch the fuzzing process</span>
 f<span style="color:#f92672">.</span>fuzz()
-</code></pre></div><h2 id="running-the-fuzzer">Running the fuzzer</h2>
+</code></pre></div><h4 id="-running-the-fuzzer">🦘 Running the fuzzer</h4>
 <p>I have developed frelatage to be highly configurable, so it is possible to change several constants through environment variables:</p>
 <table>
 <thead>
@@ -274,7 +582,7 @@ f<span style="color:#f92672">.</span>fuzz()
 </tbody>
 </table>
 <p>So we start by configuring our fuzzer:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export FRELATAGE_DICTIONARY_ENABLE<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export FRELATAGE_DICTIONARY_ENABLE<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_TIMEOUT_DELAY<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_INPUT_FILE_TMP_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/tmp/frelatage&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_INPUT_MAX_LEN<span style="color:#f92672">=</span><span style="color:#ae81ff">4096</span> <span style="color:#f92672">&amp;&amp;</span>
@@ -282,8 +590,8 @@ export FRELATAGE_MAX_THREADS<span style="color:#f92672">=</span><span style="col
 export FRELATAGE_MAX_CYCLES_WITHOUT_NEW_PATHS<span style="color:#f92672">=</span><span style="color:#ae81ff">5000</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_INPUT_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./in&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
 export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./dict&#34;</span> <span style="color:#f92672">&amp;&amp;</span>
-</code></pre></div><p>Then we launch it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python3 pillow_fuzzer.py
+</code></pre></div><p>Then we launch it</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python3 pillow_fuzzer.py
 </code></pre></div><table>
 <thead>
 <tr>
@@ -291,8 +599,8 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 </tr>
 </thead>
 </table>
-<p>The fuzzing process can take from a few hours to several days, depending on the new paths found by fuzzing during the process.</p>
-<h2 id="triaging-the-crashes-reports">Triaging the crashes reports</h2>
+<p>The fuzzing process can take from a <strong>few hours</strong> to <strong>several days</strong>, depending on the new paths found by fuzzing during the process.</p>
+<h4 id="-triaging-the-crashes-reports">💥 Triaging the crashes reports</h4>
 <p>now enters the less pleasant part, namely triaging the crashes.</p>
 <blockquote>
 <p><strong>Crash triage</strong> involves examining each crash discovered by Frelatage to determine whether the crash might be worth investigating further (for security researchers, this typically means determining whether the crash is likely due to a vulnerability) and, if so, what the root cause of the crash is. Reviewing each crash in detail can be very time consuming, especially if the fuzzer has identified dozens or hundreds of crashes. This will probably be the case if you leave Frelatage running for several hours/days.</p>
@@ -305,7 +613,7 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 <li><em><strong>err_pos</strong></em>: Line where an error occurred, <em>e.g. 34</em></li>
 </ul>
 <p>-&gt; The report directory is in the following form and contains files passed as argument:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    ├── out
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    ├── out
     │   ├── id:&lt;crash ID&gt;,err:&lt;error type&gt;,err_file:&lt;error file&gt;,err_pos:&lt;err_pos&gt;
     │       ├── input
     │       ├── 0
@@ -324,12 +632,12 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 </tr>
 </tbody>
 </table>
-<h4 id="read-a-report">Read a report</h4>
+<h4 id="-read-a-report">📄 Read a report</h4>
 <p>Inputs passed to a function are serialized using the pickle module before being saved in the <code>&lt;report_folder&gt;/input</code> file. It is therefore necessary to deserialize it to be able to read the contents of the file. This action can be performed with <a href="https://github.com/Rog3rSm1th/Frelatage/blob/main/scripts/read_report.py">this script</a>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./read_report.py input
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./read_report.py input
 
 <span style="color:#f92672">{</span><span style="color:#e6db74">&#39;input&#39;</span>: <span style="color:#f92672">[{</span><span style="color:#e6db74">&#39;value&#39;</span>: <span style="color:#e6db74">&#39;/tmp/frelatage/0/0/0e8ef3773a13824c42f021c1af856c351effa6a2-2&#39;</span>, <span style="color:#e6db74">&#39;file&#39;</span>: True<span style="color:#f92672">}]}</span>
-</code></pre></div><h2 id="upcoming-features">Upcoming features</h2>
+</code></pre></div><h4 id="-upcoming-features">👉 Upcoming features</h4>
 <p>Frelatage is still in active development, so what has been written above may (will?) change, as I plan to work on new features to make my fuzzer even more effective.</p>
 <p>Here are the features I plan to implement in the next few weeks:</p>
 <ul>
@@ -338,8 +646,23 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 <li>A more colorful interface (who wants to work with dull tools?)</li>
 </ul>
 <p>To keep up to date with the changes made to Frelatage, the very best way is to look at the <a href="https://github.com/Rog3rSm1th/Frelatage">Github repo</a></p>
-<h3 id="thanks-for-reading">Thanks for reading!</h3>
+<h4 id="-thanks-for-reading">😃 Thanks for reading!</h4>
 <p>for more informations or suggestions, you can contact me at: <a href="mailto:r0g3r5@protonmail.com">r0g3r5@protonmail.com</a>, or on twitter at <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Kharma: A new alternative to dharma for grammar-based fuzzing</title>
+            <link>https://Rog3rSm1th.github.io/posts/kharma/</link>
+            <pubDate>Wed, 16 Feb 2022 00:00:00 +0000</pubDate>
+            
+            <guid>https://Rog3rSm1th.github.io/posts/kharma/</guid>
+            <description>🏭 Grammar based fuzzing As a developer, you&amp;rsquo;ve probably had to do some kind of testing at some point in your career. One of the most effective ways to test code is by doing fuzz testing, which involves generating random inputs to your program in order to try and find unexpected behavior. One way to do this is by using a tool like Dharma, which generates inputs from a grammar.</description>
+            <content type="html"><![CDATA[<h4 id="-grammar-based-fuzzing">🏭 Grammar based fuzzing</h4>
+<p>As a developer, you&rsquo;ve probably had to do some kind of testing at some point in your career. One of the most effective ways to test code is by doing fuzz testing, which involves generating random inputs to your program in order to try and find unexpected behavior. One way to do this is by using a tool like <a href="https://github.com/MozillaSecurity/dharma">Dharma</a>, which generates inputs from a grammar.</p>
+<h4 id="-creating-kharma">🎉 Creating Kharma</h4>
+<p>However, Dharma wasn&rsquo;t being maintained anymore, and was lacking some features that I wanted to use, so I decided to write my own version of it. I named it Kharma, and it has several new features that weren&rsquo;t available in Dharma. For example, Kharma allows you to write functions inside the grammar using Python code, which can be very useful for generating more complex inputs. Additionally, Kharma has the ability to generate random strings from regular expressions.</p>
+<p>If you&rsquo;re interested in trying out Kharma, you can check out the GitHub repository <a href="https://github.com/Rog3rSm1th/kharma">here</a>.</p>
 ]]></content>
         </item>
         
@@ -349,48 +672,48 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
             <pubDate>Mon, 10 Jan 2022 00:00:00 +0000</pubDate>
             
             <guid>https://Rog3rSm1th.github.io/posts/set-up-risc-v-developpement-environment/</guid>
-            <description>First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
- The applications of this new architecture are multiple, here is a non-exhaustive list of examples :</description>
-            <content type="html"><![CDATA[<h4 id="first-what-is-risc-v"><strong>First, what is RISC-V?</strong></h4>
+            <description>🧐 First, what is RISC-V?  RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010. and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.
+ The applications of this new architecture are multiple, here is a non-exhaustive list of examples:</description>
+            <content type="html"><![CDATA[<h4 id="-first-what-is-risc-v">🧐 First, what is RISC-V?</h4>
 <blockquote>
 <p>RISC-V is an open standard instruction set architecture (ISA) that began as a project at UC-Berkeley in 2010.  and is based on established reduced instruction set computer (RISC) principles. Unlike most other ISA designs, RISC-V is provided under open source licenses that do not require fees to use.</p>
 </blockquote>
-<p>The applications of this new architecture are multiple, here is a non-exhaustive list of examples :</p>
+<p>The applications of this new architecture are multiple, here is a non-exhaustive list of examples:</p>
 <ul>
 <li><a href="https://riscv.org/news/2019/08/how-the-european-processor-initiative-is-leveraging-risc-v-for-the-future-of-supercomputing/">The European Union has launched a supercomputer project based on the RISC-V architecture, known as the European Processor Initiative (EPI)</a></li>
 <li><a href="https://www.theregister.com/2021/06/08/iscas_2000_riscv_laptops/">The Institute of Software Chinese Academy of Sciences announced in June 2021, that it is planning to build 2,000 RV64GC-based laptops by the end of 2022</a></li>
 <li><a href="https://www.cnx-software.com/2018/02/27/greenwaves-gap8-is-a-low-power-risc-v-iot-processor-optimized-for-artificial-intelligence-applications/">A Low Power RISC-V IoT Processor Optimized for Artificial Intelligence Applications</a></li>
 <li><a href="https://pandaily.com/alibaba-announces-open-source-risc-v-based-xuantie-series-processors/">Ali-Baba annouces open-source RISC-V based processors</a></li>
 </ul>
-<p>The increasing presence of this architecture on highly critical installations led me to question the security aspect, thus my future publications on this blog will mainly focus on security in the RISC-V architecture, including RISC-V malwares analysis on linux systems.</p>
-<p>Although I will soon invest in a development board to facilitate my research, when I wanted to start tinkering with this architecture I did not have one at my disposal. So I had to set up a development environment on my non-RISC-V machine, and this is the topic of this first publication about RISC-V systems.</p>
-<p>I&rsquo;d like to show you the setup I&rsquo;ve built to ease the development of programs in assembly on a RISC-V architecture when you don&rsquo;t have a RISC-V machine at home.</p>
+<p>The increasing presence of this architecture on highly critical installations led me to question the <em>security aspect</em>.</p>
+<p>Although I will soon invest in a development board to facilitate my research, when I wanted to start tinkering with this architecture I did not have one at my disposal. So I had to set up a development environment on my <em>non-RISC-V machine</em>, and this is the topic of this first publication about RISC-V systems.</p>
+<p>I&rsquo;d like to show you the setup I&rsquo;ve built to <strong>ease the development of programs in assembly</strong> on a RISC-V architecture when you don&rsquo;t have a RISC-V machine at home.</p>
 <ol>
-<li><a href="#how-i-will-structure-my-setup">How I will structure my setup.</a></li>
-<li><a href="#download-a-debian-risc-v-64-bits-image">Download a Debian RISC-V 64 bits image</a></li>
-<li><a href="#using-qemu-to-emulate-a-risc-v-machine">Using QEMU to emulate a RISC-V machine</a></li>
-<li><a href="#creating-a-shared-directory-between-host-and-guest-machines">Creating a shared directory between host and guest machine</a></li>
-<li><a href="#installing-debugging-and-compilation-tools">Installing debugging and compilation tools on my host machine</a>
+<li><a href="#-how-i-will-structure-my-setup">How I will structure my setup.</a></li>
+<li><a href="#-download-a-debian-risc-v-64-bits-image">Download a Debian RISC-V 64 bits image</a></li>
+<li><a href="#-using-qemu-to-emulate-a-risc-v-machine">Using QEMU to emulate a RISC-V machine</a></li>
+<li><a href="#-creating-a-shared-directory-between-host-and-guest-machines">Creating a shared directory between host and guest machine</a></li>
+<li><a href="#-installing-debugging-and-compilation-tools">Installing debugging and compilation tools on my host machine</a>
 <ol>
 <li><a href="#gdb">GDB</a></li>
 <li><a href="#gcc">GCC</a></li>
 <li><a href="#radare2">Radare2</a></li>
 </ol>
 </li>
-<li><a href="#demonstration">Demonstration</a></li>
-<li><a href="#conclusion">Conclusion</a></li>
-<li><a href="#to-go-further">To go further</a></li>
+<li><a href="#-demonstration">Demonstration</a></li>
+<li><a href="#-conclusion">Conclusion</a></li>
+<li><a href="#-to-go-further">To go further</a></li>
 </ol>
-<h2 id="how-i-will-structure-my-setup">How I will structure my setup</h2>
+<h4 id="-how-i-will-structure-my-setup">⚙️ How I will structure my setup</h4>
 <p>I started by mapping out what I was going to need:</p>
 <ul>
-<li>A Debian 64-bit RISC-V image since it is a linux distribution I know quite well. I could also have decided to work with Fedora since <a href="https://fedoraproject.org/wiki/Architectures/RISC-V">there is a RISC-V version</a> of it.</li>
-<li>A folder where I will store all my useful scripts to perform redundant actions (assembly code compilation, setup launch&hellip;)</li>
-<li>A shared folder between the host machine, and the guest machine.</li>
-<li>A folder where I store the assembly programs I write</li>
+<li>A <strong>Debian 64-bit RISC-V</strong> image since it is a linux distribution I know quite well. I could also have decided to work with Fedora since <a href="https://fedoraproject.org/wiki/Architectures/RISC-V">there is a RISC-V version</a> of it.</li>
+<li>A folder where I will store all my <strong>useful scripts</strong> to perform redundant actions (assembly code compilation, setup launch&hellip;)</li>
+<li>A <strong>shared folder</strong> between the host machine, and the guest machine.</li>
+<li>A folder where I store the <strong>assembly programs</strong> I write.</li>
 </ul>
 <p>Here is how I built the directory tree of my project:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./RISC-V_Setup
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./RISC-V_Setup
 ├── image
 │   └── Debian image
 ├── scripts
@@ -399,23 +722,23 @@ export FRELATAGE_DICTIONARY_DIR<span style="color:#f92672">=</span><span style="
 │   └── Share directory between HOST <span style="color:#f92672">(</span>my computer<span style="color:#f92672">)</span> and GUEST machine <span style="color:#f92672">(</span>RISC-V emulator<span style="color:#f92672">)</span>
 ├── src
 │   └── Directory where I write RISC-V assembly code
-</code></pre></div><h2 id="download-a-debian-risc-v-64-bits-image">Download a Debian RISC-V 64 bits image</h2>
+</code></pre></div><h4 id="-download-a-debian-risc-v-64-bits-image">🕵️ Download a Debian RISC-V 64 bits image</h4>
 <p>I will create an <code>image</code> directory and download a pre-made RISC-V 64 Debian Image.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">mkdir image
-wget https://gitlab.com/api/v4/projects/giomasce%2Fdqib/jobs/artifacts/master/download?job=convert_riscv64-virt&#34; -O ./image/debian-rv64.zip
-</code></pre></div><p>We now only have to unzip it in the <code>./image</code> folder.</p>
+<pre><code class="language-console" data-lang="console">mkdir image
+wget https://gitlab.com/api/v4/projects/giomasce%2Fdqib/jobs/artifacts/master/download?job=convert_riscv64-virt&quot; -O ./image/debian-rv64.zip
+</code></pre><p>We now only have to unzip it in the <code>./image</code> folder.</p>
 <blockquote>
 <p>The default credentials are <strong>debian:debian</strong> and <strong>root:root</strong></p>
 </blockquote>
-<h2 id="using-qemu-to-emulate-a-risc-v-machine">Using QEMU to emulate a RISC-V machine</h2>
+<h4 id="-using-qemu-to-emulate-a-risc-v-machine">🏭 Using QEMU to emulate a RISC-V machine</h4>
 <blockquote>
 <p>A small point of vocabulary to avoid confusion: hereafter we will call my main machine the <strong>host</strong> machine and the RISC-V machine emulated with QEMU the <strong>guest</strong> machine.</p>
 </blockquote>
-<p>-&gt; We emulate a 64 bits version of the RISC-V processor using <a href="https://www.qemu.org/">QEMU</a>. In order to do this we will need the package <code>qemu-system-riscv64</code> which you can install with <code>sudo apt-get install qemu-system-riscv64</code></p>
+<p>-&gt; We emulate a <strong>64 bits</strong> version of the RISC-V processor using <a href="https://www.qemu.org/">QEMU</a>. In order to do this we will need the package <code>qemu-system-riscv64</code> which you can install with <code>sudo apt-get install qemu-system-riscv64</code></p>
 <blockquote>
 <p>For the purpose of this demonstration, we will use a 64-bit version of the RISC-V architecture, but it is however possible to emulate a 32-bit RISC-V processor with QEMU using the <code>qemu-system-riscv32</code> package</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">qemu-system-riscv64 <span style="color:#ae81ff">\
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">qemu-system-riscv64 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>    -machine virt <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>    -cpu rv64 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>    -m 1G <span style="color:#ae81ff">\
@@ -430,69 +753,77 @@ wget https://gitlab.com/api/v4/projects/giomasce%2Fdqib/jobs/artifacts/master/do
 </span><span style="color:#ae81ff"></span>    -fsdev local,security_model<span style="color:#f92672">=</span>passthrough,id<span style="color:#f92672">=</span>fsdev0,path<span style="color:#f92672">=</span>./share <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>    -device virtio-9p-pci,id<span style="color:#f92672">=</span>fs0,fsdev<span style="color:#f92672">=</span>fsdev0,mount_tag<span style="color:#f92672">=</span>hostshare
 </code></pre></div><p>I think you may need some further explanation of this script:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-cpu rv64
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-cpu rv64
 </code></pre></div><p>-&gt; We select a RISC-v 64 bits CPU</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-m 1G
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-m 1G
 </code></pre></div><p>-&gt; We allocate 1GB of RAM to the guest machine.</p>
 <blockquote>
 <p>This value depends on your needs and the amount of RAM you are able to allocate to the guest machine.</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-netdev user,id<span style="color:#f92672">=</span>net,hostfwd<span style="color:#f92672">=</span>tcp::2222-:22:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-netdev user,id<span style="color:#f92672">=</span>net,hostfwd<span style="color:#f92672">=</span>tcp::2222-:22:
 </code></pre></div><p>-&gt; This line makes port 22 accessible as localhost:2222. This lets us forward SSH connections.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-bios /usr/lib/riscv64-linux-gnu/opensbi/generic/fw_jump.elf <span style="color:#ae81ff">\
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-bios /usr/lib/riscv64-linux-gnu/opensbi/generic/fw_jump.elf <span style="color:#ae81ff">\
 </span></code></pre></div><p>-&gt; If needed, replace with the location of your OpenBSI. But make sure it’s the same configuration.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-append <span style="color:#e6db74">&#34;root=LABEL=rootfs console=ttyS0&#34;</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-append <span style="color:#e6db74">&#34;root=LABEL=rootfs console=ttyS0&#34;</span> <span style="color:#ae81ff">\
 </span></code></pre></div><p>-&gt; The append line adds extra options to the kernel command line in UNIX derivatives.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-kernel /usr/lib/u-boot/qemu-riscv64_smode/uboot.elf <span style="color:#ae81ff">\
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-kernel /usr/lib/u-boot/qemu-riscv64_smode/uboot.elf <span style="color:#ae81ff">\
 </span></code></pre></div><p>-&gt; the path of my U-Boot image.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-nographic
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-nographic
 </code></pre></div><p>-&gt; With this option, you can totally disable graphical output so that QEMU is a simple command line application.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"> -fsdev local,security_model<span style="color:#f92672">=</span>passthrough,id<span style="color:#f92672">=</span>fsdev0,path<span style="color:#f92672">=</span>./share <span style="color:#ae81ff">\
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"> -fsdev local,security_model<span style="color:#f92672">=</span>passthrough,id<span style="color:#f92672">=</span>fsdev0,path<span style="color:#f92672">=</span>./share <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span> -device virtio-9p-pci,id<span style="color:#f92672">=</span>fs0,fsdev<span style="color:#f92672">=</span>fsdev0,mount_tag<span style="color:#f92672">=</span>hostshare
 </code></pre></div><p>-&gt; These two lines allow us to create a common folder between the host machine and the guest machine.</p>
-<h2 id="creating-a-shared-directory-between-host-and-guest-machines">Creating a shared directory between Host and Guest machines</h2>
-<p>I have seen some people choosing to use <code>scp</code> to communicate between their host machine and their guest machine. I propose a different method by using a shared folder between the two machines.</p>
-<script async type="application/javascript" src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js">
-    var config = {
-      startOnLoad:true,
-      theme:'neutral',
-      align:'center'
-    };
-    mermaid.initialize(config);
-  </script>
-  
-  <div class="mermaid">
-    
+<h4 id="-creating-a-shared-directory-between-host-and-guest-machines">📂 Creating a shared directory between Host and Guest machines</h4>
+<p>I have seen some people choosing to use <code>scp</code> to communicate between their host machine and their guest machine. I propose a different method by using a <strong>shared folder</strong> between the two machines.</p>
+<script
+  type="application/javascript"
+  src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"
+></script>
+<script>
+  var config = {
+    startOnLoad: true,
+    theme:'dark',
+    align:'center',
+  };
+  mermaid.initialize(config);
+</script>
+
+<div class="mermaid">
 flowchart TB
     subgraph RISC-V Setup
     Host-Machine--> |./share| Share-directory
     Guest-Machine--> |/mnt/share|Share-directory
     end
+</div>
 
-  </div>
+<style>
+.mermaid {
+  text-align: center;
+}
+</style>
 <p>-&gt; We run this script on the guest machine</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SHARED_FOLDER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/mnt/share&#34;</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SHARED_FOLDER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/mnt/share&#34;</span>
 
 <span style="color:#75715e">#  Create shared folder</span>
 mkdir <span style="color:#e6db74">${</span>SHARED_FOLDER<span style="color:#e6db74">}</span>
 mount -t 9p -o trans<span style="color:#f92672">=</span>virtio,version<span style="color:#f92672">=</span>9p2000.L hostshare <span style="color:#e6db74">${</span>SHARED_FOLDER<span style="color:#e6db74">}</span>
 </code></pre></div><p>Now the contents of <code>./share</code> on the host machine and <code>/mnt/share</code> on the guest machine will be the same</p>
-<h2 id="installing-debugging-and-compilation-tools">Installing debugging and compilation tools</h2>
+<h4 id="-installing-debugging-and-compilation-tools">⚙️ Installing debugging and compilation tools</h4>
 <p>for reverse engineering purposes, I sometimes need a debugger to analyze the behavior of a binary. I am familiar with <strong>GDB</strong> and <strong>Radare2</strong>, and I will show you how to use them in this case.</p>
-<p>We will start by installing RISC-V GNU toolchain as it contains a <strong>compiler</strong> (GCC) and our favorite <strong>debugger</strong> (GDB), as well as other very useful tools, such as an <strong>assembler</strong> and a <strong>linker</strong>. Installation instructions can be found <a href="https://github.com/riscv-collab/riscv-gnu-toolchain">here</a></p>
-<h4 id="gdb">GDB</h4>
+<p>We will start by installing <em>RISC-V GNU toolchain</em> as it contains a <strong>compiler</strong> (GCC) and our favorite <strong>debugger</strong> (GDB), as well as other very useful tools, such as an <strong>assembler</strong> and a <strong>linker</strong>. Installation instructions can be found <a href="https://github.com/riscv-collab/riscv-gnu-toolchain">here</a></p>
+<h5 id="gdb">GDB</h5>
 <p>We can now debug a RISC-V binary with the command :</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ riscv64-unknown-elf-gdb binary
-</code></pre></div><h4 id="gcc">GCC</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ riscv64-unknown-elf-gdb binary
+</code></pre></div><h5 id="gcc">GCC</h5>
 <p>If you want to compile a binary with gcc for the RISC-V architecture, here is the command to use</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ riscv64-unknown-elf-gcc -ggdb -static -o binary binary.c
-</code></pre></div><h4 id="radare2">Radare2</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ riscv64-unknown-elf-gcc -ggdb -static -o binary binary.c
+</code></pre></div><h5 id="radare2">Radare2</h5>
 <p><a href="https://github.com/radareorg/radare2">Radare2</a> is pretty cool when it comes to working with RISC-V binaries since <strong>it has built-in RISC-V support</strong>.</p>
-<p>You can analyze a binary simply by running it as usual :</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ r2 ./riscv-binary
-</code></pre></div><h2 id="demonstration">Demonstration</h2>
+<p>You can analyze a binary simply by running it as usual:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ r2 ./riscv-binary
+</code></pre></div><h4 id="-demonstration">✨ Demonstration</h4>
 <p>-&gt; Here is a quick reminder of how my setup is organized. :</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./RISC-V_Setup
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./RISC-V_Setup
 ├── share
 │   └── Shared directory between HOST <span style="color:#f92672">(</span>my computer<span style="color:#f92672">)</span> and GUEST machine <span style="color:#f92672">(</span>RISC-V emulator<span style="color:#f92672">)</span>
 ├── src
@@ -500,7 +831,7 @@ mount -t 9p -o trans<span style="color:#f92672">=</span>virtio,version<span styl
 ├── ...
 │   └── ...
 </code></pre></div><p>So we will write our assembly code in the <code>./src</code> folder, and compile it into the <code>./share</code> folder to be able to access it from the guest machine. To do this we will first open a file <code>program.s</code>  which will be a basic RISC-V assembler program that displays a &ldquo;Hello world&rdquo; message on the standard output (We must start somewhere :D ) :</p>
-<pre tabindex="0"><code class="language-risc-v" data-lang="risc-v">#
+<pre><code class="language-risc-v" data-lang="risc-v">#
 # Risc-V Assembler program to print &quot;Hello World!&quot;
 # to stdout.
 #
@@ -534,7 +865,7 @@ helloworld:      .ascii &quot;Hello World!\n&quot;
 <li><code>riscv64-linux-gnu-ld</code> to link the object file into an executable file.</li>
 </ul>
 <p>I wrote a bash script (stored in <code>./script</code>) to automatically do the job:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
 </span><span style="color:#75715e"></span>
 ASSEMBLY_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>dirname $0<span style="color:#66d9ef">)</span><span style="color:#e6db74">/../src&#34;</span>
 SHARE_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>dirname $0<span style="color:#66d9ef">)</span><span style="color:#e6db74">/../share&#34;</span>
@@ -544,20 +875,20 @@ riscv64-linux-gnu-ld -o <span style="color:#e6db74">${</span>SHARE_DIR<span styl
 rm <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program.o
 chmod +x <span style="color:#e6db74">${</span>SHARE_DIR<span style="color:#e6db74">}</span>/program
 </code></pre></div><p>We launch it :</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ ./scripts/compile.sh
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ~ ./scripts/compile.sh
 </code></pre></div><p>We now have an executable binary named <code>program</code> in <code>/mnt/share</code> on the guest machine.</p>
 <p>-&gt; We can test if it works :</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">debian@debian:/mnt/share$ ./program
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">debian@debian:/mnt/share$ ./program
 Hello World!
 </code></pre></div><p>and it&rsquo;s working!</p>
 <p>We can now debug the binary on the host machine with <code>riscv64-unknown-elf-gdb</code> or with <code>Radare2</code>.</p>
-<h2 id="conclusion">Conclusion</h2>
+<h4 id="-conclusion">🎉 Conclusion</h4>
 <p>So here is a setup I made to be able to work more easily under a RISC-V architecture in a linux environment. My goal was to facilitate the task of those who would like to develop in RISC-V assembler without being able to get a RISC-V machine, or to do reverse engineering. To do so, I published my complete setup with installation instructions <a href="https://github.com/Rog3rSm1th/RISC-V-Setup">here</a>.</p>
 <p>If you have any question or corrections to suggest for this article, I can be reached by mail at the following address: <a href="mailto:r0g3r5@protonmail.Com">r0g3r5@protonmail.Com</a></p>
 <p>You can also follow me on Twitter (even if I am very (very) little active) : <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
 <p>I hope I helped you, or taught you something :D</p>
 <p><img src="https://i.imgur.com/Bc59GDu.jpg#center" alt=""></p>
-<h2 id="to-go-further">To go further</h2>
+<h4 id="-to-go-further">👉 To go further</h4>
 <ul>
 <li><a href="https://medium.com/swlh/risc-v-assembly-for-beginners-387c6cd02c49">A good introduction to RISC-V assembly programming from Eric Engheim</a></li>
 <li><a href="https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md">RISC-V Assembly Programmer&rsquo;s Manual</a></li>
@@ -572,29 +903,40 @@ Hello World!
             <pubDate>Thu, 10 Jun 2021 00:00:00 +0000</pubDate>
             
             <guid>https://Rog3rSm1th.github.io/posts/sigreturn-oriented-programming/</guid>
-            <description>I wrote this article in order to synthesize the different methods I have encountered to exploit a binary with SROP, it is also a preparatory work for the development of a tool allowing to automatically search in a binary the elements useful to the creation of a SROP exploit.
+            <description>If you&amp;rsquo;re interested in binary exploitation, you may have heard of SROP (Sigreturn Oriented Programming), a technique that leverages a program&amp;rsquo;s signal handling mechanism to gain control over its execution flow. In this article, we&amp;rsquo;ll explore different methods to exploit a binary with SROP, and discuss a tool that can automate the process of finding the necessary elements for a successful SROP exploit.
  Since its first presentation at the 35th Security and Privacy IEEE conference in 2014, the SROP method has been the subject of several papers, as well as numerous CTF challenges, however, it remains difficult to find a comprehensive paper on this topic, so this will be the focus of this article.</description>
             <content type="html"><![CDATA[<blockquote>
-<p><em>I wrote this article in order to synthesize the different methods I have encountered to exploit a binary with SROP, it is also a preparatory work for the development of a tool allowing to automatically search in a binary the elements useful to the creation of a SROP exploit.</em></p>
+<p><em>If you&rsquo;re interested in binary exploitation, you may have heard of SROP (Sigreturn Oriented Programming), a technique that leverages a program&rsquo;s signal handling mechanism to gain control over its execution flow. In this article, we&rsquo;ll explore different methods to exploit a binary with SROP, and discuss a tool that can automate the process of finding the necessary elements for a successful SROP exploit.</em></p>
 </blockquote>
 <p>Since its first presentation at the 35th <em>Security and Privacy IEEE conference</em> in 2014, the <em>SROP</em> method has been the subject of several papers, as well as numerous CTF challenges, however, it remains difficult to find a comprehensive paper on this topic, so this will be the focus of this article.</p>
 <p>We will cover (probably not exhaustively) the different ways that can be used to exploit a <code>x64/x86</code> binary using the <em>SROP</em> method.</p>
 <ol>
-<li><a href="#how-does-it-works">How does it works?</a></li>
-<li><a href="#why-using-this-technique">Why using this technique?</a></li>
-<li><a href="#the-different-ways-to-set-the-eax-register-to-0xf">The different ways to set the eax register to 0xf</a></li>
-<li><a href="#exemples-of-custom-sigcontexts">Exemples of custom sigcontexts</a></li>
+<li><a href="#-how-does-it-works">How does it works?</a></li>
+<li><a href="#-why-using-this-technique">Why using this technique?</a></li>
+<li><a href="#-the-different-ways-to-set-the-eax-register-to-0xf">The different ways to set the eax register to 0xf</a></li>
+<li><a href="#-exemples-of-custom-sigcontexts">Exemples of custom sigcontexts</a></li>
 </ol>
-<h2 id="how-does-it-works">How does it works?</h2>
+<h4 id="-how-does-it-works">🧐 How does it works?</h4>
 <p>In order to understand how <em>SROP</em> works, we must first understand what happens when a <em>signal</em> occurs in a Unix-like system.</p>
 <p>Signals are not the subject of this article, but you can find what you need to understand the following <a href="https://en.wikipedia.org/wiki/Signal_(IPC)">here</a></p>
-<h4 id="what-happens-when-a-signal-occurs">What happens when a signal occurs:</h4>
+<h4 id="-what-happens-when-a-signal-occurs">📡 What happens when a signal occurs:</h4>
 <ul>
 <li>the execution of the process will be paused by the <em>kernel</em> in order to jump to a routine that will handle the signal.</li>
 <li>In order to safely resume execution after the handler, the context of this process is pushed to be saved on the <em>stack</em> (registers, flags, instruction pointer, stack pointer&hellip;).
 the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details can be found <a href="https://github.com/torvalds/linux/blob/master/arch/x86/include/uapi/asm/sigcontext.h">here</a></li>
 </ul>
-<p><img src="https://i.imgur.com/I0R0bJx.png#center" alt=""></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="https://i.imgur.com/I0R0bJx.png#center" alt=""></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">sigcontext</td>
+</tr>
+</tbody>
+</table>
 <ul>
 <li><code>sigreturn()</code> is called once the handler is finished. the process context is restored from the stack and the stack values are removed.</li>
 </ul>
@@ -606,19 +948,19 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 <li>A way to put the value <code>0xf</code> into the <code>eax</code> register</li>
 <li>a <code>syscall; ret</code> gagdet</li>
 </ul>
-<h2 id="why-using-this-technique">Why using this technique?</h2>
+<h4 id="-why-using-this-technique">🤔 Why using this technique?</h4>
 <ul>
 <li>This method allows to build an exploit with a very limited number of gagdets (<em>ROP</em>)</li>
 <li>It&rsquo;s much easier to control the execution context (<em>registers</em> status) than with a classical <em>ROP</em></li>
 <li><em>SROP</em> exploits are usually portable across different binaries with minimal or no effort and allow easily setting the contents of the <em>registers</em></li>
 <li>Because we can 😉</li>
 </ul>
-<h2 id="the-different-ways-to-set-the-eax-register-to-0xf">The different ways to set the <code>eax</code> register to <code>0xf</code></h2>
-<h3 id="the-trivial-case-we-have-a-mov-eax-0xf-gagdet">The trivial case: we have a <code>mov eax, 0xf</code> gagdet</h3>
+<h4 id="-the-different-ways-to-set-the-eax-register-to-0xf">🔍 The different ways to set the <code>eax</code> register to <code>0xf</code></h4>
+<h5 id="the-trivial-case-we-have-a-mov-eax-0xf-gagdet">The trivial case: we have a <code>mov eax, 0xf</code> gagdet</h5>
 <p>the case where this gadget is present in the binary is the simplest to exploit, since it will allow us to place <code>0xf</code> into the eax register in a single action, no need to chain <em>ROP gadgets</em>.</p>
 <p>➡ <strong>Exemple</strong> :</p>
 <p>We start by searching the different <em>ROP gadgets</em> present in the binary with the <a href="https://github.com/JonathanSalwan/ROPgadget">ROPgadget</a> tool</p>
-<pre tabindex="0"><code>    $ ~ ROPgadget --binary trivial
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    $ ~ ROPgadget --binary trivial
     Gadgets information
     ============================================================
     [...]
@@ -626,7 +968,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
     [...]
     0x0000000000001143 : mov eax, 0xf ; ret
     [...]
-</code></pre><p>With these two <em>gadgets</em>, building an exploit becomes very simple</p>
+</code></pre></div><p>With these two <em>gadgets</em>, building an exploit becomes very simple</p>
 <p>Here is the structure of our exploit.</p>
 <table>
 <thead>
@@ -649,10 +991,10 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 </tr>
 </tbody>
 </table>
-<h3 id="using-thepop-eax-ret-gadget">Using the<code>pop eax; ret</code> gadget</h3>
+<h5 id="using-thepop-eax-ret-gadget">Using the<code>pop eax; ret</code> gadget</h5>
 <p>This case is a &ldquo;variant&rdquo; of the previous one where it is still rather simple to put the value <code>0xf</code> in the <code>eax</code> register</p>
-<p>➡ <strong>Exemple</strong> :</p>
-<pre tabindex="0"><code>    $ ~ ROPgadget --binary pop_eax
+<p>➡ <strong>Example</strong> :</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    $ ~ ROPgadget --binary pop_eax
     Gadgets information
     ============================================================
     [...]
@@ -660,7 +1002,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
     [...]
     0x0000000000401020 : pop eax ; ret
     [...]
-</code></pre><p>Here is the structure of our exploit.</p>
+</code></pre></div><p>Here is the structure of our exploit.</p>
 <table>
 <thead>
 <tr>
@@ -686,7 +1028,7 @@ the context takes the form of a &ldquo;sigcontext&rdquo; structure whose details
 </tbody>
 </table>
 <p>example of a python exploit by <a href="https://github.com/mishrasunny174">mishrasunny174</a></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
 <span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 context<span style="color:#f92672">.</span>arch <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;amd64&#39;</span>
 offset <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x48</span>
@@ -707,10 +1049,10 @@ payload <span style="color:#f92672">+=</span> str(frame)
 p<span style="color:#f92672">.</span>sendline(payload)
 p<span style="color:#f92672">.</span>interactive()
 </code></pre></div><p>The author of the exploit uses the presence of the string <code>/bin/sh</code> in the binary by passing it as a parameter to the <code>execve</code> function via the <code>rdi</code> register, but it is obviously possible to use many other methods.</p>
-<h3 id="use-the-read-syscall-to-set-the-eax-register-to-0xf">Use the <code>read</code> syscall to set the <code>eax</code> register to <code>0xf</code></h3>
+<h5 id="use-the-read-syscall-to-set-the-eax-register-to-0xf">Use the <code>read</code> syscall to set the <code>eax</code> register to <code>0xf</code></h5>
 <p>An interesting thing to know is that the <code>read</code> syscall records the number of bytes read into the <code>eax</code> register.</p>
 <p>There are two methods to set the value <code>0xf</code> in eax using the <code>read</code> syscall:</p>
-<h4 id="using-the-mov-eax-0x0-gadget">Using the <code>mov eax, 0x0</code> gadget</h4>
+<h5 id="using-the-mov-eax-0x0-gadget">Using the <code>mov eax, 0x0</code> gadget</h5>
 <table>
 <thead>
 <tr>
@@ -746,7 +1088,7 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h4 id="using-the-pop-eax-gadget">Using the <code>pop eax</code> gadget</h4>
+<h5 id="using-the-pop-eax-gadget">Using the <code>pop eax</code> gadget</h5>
 <table>
 <thead>
 <tr>
@@ -785,9 +1127,9 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h2 id="exemples-of-custom-sigcontexts">Exemples of custom sigcontexts</h2>
+<h4 id="-exemples-of-custom-sigcontexts">🪧 Exemples of custom sigcontexts</h4>
 <p>Once you have figured out how to call the <code>sigreturn</code> syscall, you need to figure out how to get a <strong>shell</strong> through the context that will be restored from the stack.</p>
-<h4 id="if-the-binary-contains-the-binsh-string">If the binary contains the <code>/bin/sh</code> string</h4>
+<h5 id="if-the-binary-contains-the-binsh-string">If the binary contains the <code>/bin/sh</code> string</h5>
 <p>The idea is to call the <code>execve</code> function ( syscall <code>0x3b</code> -&gt; 59 in decimal ) with the string <code>/bin/sh</code> as parameter which will give us a shell. The string <code>/bin/sh</code> can either be present in the binary or you can write it in a memory area whose you know the address.</p>
 <table>
 <thead>
@@ -819,7 +1161,7 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h4 id="use-mprotect">Use <code>mprotect</code></h4>
+<h5 id="use-mprotect">Use <code>mprotect</code></h5>
 <blockquote>
 <p><strong>mprotect</strong> : set protection on a region of memory</p>
 </blockquote>
@@ -858,14 +1200,35 @@ p<span style="color:#f92672">.</span>interactive()
 </tr>
 </tbody>
 </table>
-<h2 id="to-go-further">To go further</h2>
+<h4 id="-to-go-further">⬇️ To go further</h4>
 <ul>
 <li><a href="https://en.wikipedia.org/wiki/Sigreturn-oriented_programming">Wikipedia article about SROP</a></li>
 <li><a href="https://hackmd.io/@imth/SROP">A write-Up for the Minipwn challenge from the 2019 TheManyHatsClub CTF</a></li>
 <li><a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=6956568">Article from Erik Bosman</a></li>
 </ul>
-<h3 id="thanks-for-reading">Thanks for reading!</h3>
+<h3 id="-thanks-for-reading">🤟 Thanks for reading!</h3>
 <p>for more informations or suggestions, you can contact me at : <a href="mailto:r0g3r5@protonmail.com">r0g3r5@protonmail.com</a>, or on twitter at <a href="https://twitter.com/Rog3rSm1th">@Rog3rSm1th</a></p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Solving Advent of code, but with a different programming language for each day !</title>
+            <link>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</link>
+            <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+            
+            <guid>https://Rog3rSm1th.github.io/posts/polyglot-of-code/</guid>
+            <description>Advent of Code is an annual programming challenge that occurs every December, where participants attempt to solve a set of daily puzzles that range in difficulty from easy to hard. I decided to challenge myself by attempting to solve each day&amp;rsquo;s puzzle from the 2015 edition using a different programming language.
+ 🤔 Why ? The goal of this project was to broaden my horizons and explore the various programming paradigms that exist, ranging from functional programming to imperative programming, and from object-oriented programming to declarative programming.</description>
+            <content type="html"><![CDATA[<blockquote>
+<p>Advent of Code is an annual programming challenge that occurs every December, where participants attempt to solve a set of daily puzzles that range in difficulty from easy to hard. I decided to challenge myself by attempting to solve each day&rsquo;s puzzle from the 2015 edition using a different programming language.</p>
+</blockquote>
+<h4 id="-why-">🤔 Why ?</h4>
+<p>The goal of this project was to broaden my horizons and explore the various programming paradigms that exist, ranging from functional programming to imperative programming, and from object-oriented programming to declarative programming. Through this project, I discovered many new programming concepts that I had never used before, such as monads in Haskell, pattern matching in Lua, and regular expressions in Awk.</p>
+<h4 id="-what-ive-learned">🤓 What i&rsquo;ve learned</h4>
+<p>Each day was a new adventure, as I had to learn the syntax and semantics of a new programming language, research the best data structures and algorithms to use for the given problem, and work through the challenges of debugging and testing my code. By the end of the project, I had worked with a wide range of programming languages, from Bash to Kotlin, from Perl to Mathematica.</p>
+<p>One of the biggest takeaways from this project was the opportunity to improve my problem-solving skills. Each day&rsquo;s puzzle required me to analyze the problem at hand, identify the key constraints and requirements, and design an efficient solution that would work within the given time and space limits. By practicing these skills every day for a month, I was able to hone my ability to think logically and systematically about complex problems, which has since helped me in many other areas of programming and beyond.</p>
+<p>In summary, this project was an incredibly rewarding experience that allowed me to explore the many different programming paradigms and improve my problem-solving skills. I would highly recommend Advent of Code to anyone who is looking to challenge themselves and expand their programming horizons.</p>
+<p>-&gt; <a href="https://github.com/Rog3rSm1th/polyglot-of-code">https://github.com/Rog3rSm1th/polyglot-of-code</a></p>
 ]]></content>
         </item>
         
